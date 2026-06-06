@@ -603,7 +603,7 @@ function getCfg(){return{pat:localStorage.getItem('tc_pat')||'',gist:localStorag
 async function _tryGistLoad(){
   const c=getCfg();if(!c.pat||!c.gist)return null;
   try{
-    const r=await fetch('https://api.github.com/gists/'+c.gist,{headers:{'Authorization':'token '+c.pat,'Accept':'application/vnd.github.v3+json'}});
+    const r=await fetch('https://api.github.com/gists/'+c.gist+'?_='+Date.now(),{headers:{'Authorization':'token '+c.pat,'Accept':'application/vnd.github.v3+json','Cache-Control':'no-cache'}});
     if(!r.ok)throw new Error('API '+r.status);
     const g=await r.json();const ct=g.files?.['trip_data.json']?.content;
     _gistCache=ct?JSON.parse(ct):{};_sMode='cloud';return _gistCache;
@@ -612,7 +612,7 @@ async function _tryGistLoad(){
 async function _gistSave(){
   const c=getCfg();if(!c.pat||!c.gist)return false;
   try{
-    const r=await fetch('https://api.github.com/gists/'+c.gist,{method:'PATCH',headers:{'Authorization':'token '+c.pat,'Content-Type':'application/json'},
+    const r=await fetch('https://api.github.com/gists/'+c.gist+'?_='+Date.now(),{method:'PATCH',headers:{'Authorization':'token '+c.pat,'Content-Type':'application/json','Cache-Control':'no-cache'},
       body:JSON.stringify({files:{'trip_data.json':{content:JSON.stringify(_gistCache,null,2)}}})});
     return r.ok;
   }catch(e){return false}
@@ -660,13 +660,13 @@ async function connectGist(){
   if(!pat){alert('Enter a GitHub Personal Access Token');return}
   // Verify token
   try{
-    const t=await fetch('https://api.github.com/user',{headers:{'Authorization':'token '+pat}});
+    const t=await fetch('https://api.github.com/user?_='+Date.now(),{headers:{'Authorization':'token '+pat,'Cache-Control':'no-cache'}});
     if(!t.ok){alert('Invalid token (HTTP '+t.status+'). Check it and try again.');return}
   }catch(e){alert('Cannot reach GitHub. Check your internet connection.');return}
   // Create gist if needed
   if(!gist){
     try{
-      const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
+      const r=await fetch('https://api.github.com/gists?_='+Date.now(),{method:'POST',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
         body:JSON.stringify({description:'Egypt+Umrah 2026 Trip Console Data','public':false,files:{'trip_data.json':{content:'{}'}}})});
       if(!r.ok){alert('Failed to create Gist (HTTP '+r.status+')');return}
       const d=await r.json();gist=d.id;
