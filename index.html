@@ -706,29 +706,34 @@ async function sSet(key,value){
 }
 
 async function connectGist(){
-  const pat=document.getElementById('cfgPat').value.trim();
-  let gist=document.getElementById('cfgGist').value.trim();
-  if(!pat){alert('Enter a GitHub Personal Access Token');return}
-  // Verify token
   try{
-    const t=await fetch('https://api.github.com/user?_='+Date.now(),{headers:{'Authorization':'token '+pat,'Cache-Control':'no-cache'}});
-    if(!t.ok){alert('Invalid token (HTTP '+t.status+'). Check it and try again.');return}
-  }catch(e){alert('Cannot reach GitHub. Check your internet connection.');return}
+  // Clean input — strip invisible chars from copy-paste
+  const pat=document.getElementById('cfgPat').value.replace(/[^a-zA-Z0-9_]/g,'').trim();
+  let gist=document.getElementById('cfgGist').value.replace(/[^a-zA-Z0-9]/g,'').trim();
+  document.getElementById('cfgPat').value=pat;
+  document.getElementById('cfgGist').value=gist;
+  if(!pat){alert('Enter a GitHub Personal Access Token');return}
+  if(!pat.startsWith('ghp_')&&!pat.startsWith('github_pat_')){alert('Token should start with ghp_ or github_pat_ — check you copied the full token');return}
+  ss('connecting to GitHub…');
+  // Verify token
+  const t=await fetch('https://api.github.com/user?_='+Date.now(),{headers:{'Authorization':'token '+pat,'Cache-Control':'no-cache'}});
+  if(!t.ok){alert('Invalid token (HTTP '+t.status+'). Generate a new one at github.com/settings/tokens');return}
+  const user=await t.json();
+  ss('token OK — user: '+user.login);
   // Create gist if needed
   if(!gist){
-    try{
-      const r=await fetch('https://api.github.com/gists?_='+Date.now(),{method:'POST',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
-        body:JSON.stringify({description:'Egypt+Umrah 2026 Trip Console Data','public':false,files:{'trip_data.json':{content:'{}'}}})});
-      if(!r.ok){alert('Failed to create Gist (HTTP '+r.status+')');return}
-      const d=await r.json();gist=d.id;
-      document.getElementById('cfgGist').value=gist;
-    }catch(e){alert('Error creating Gist: '+e.message);return}
+    ss('creating new Gist…');
+    const r=await fetch('https://api.github.com/gists?_='+Date.now(),{method:'POST',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
+      body:JSON.stringify({description:'Egypt+Umrah 2026 Trip Console Data','public':false,files:{'trip_data.json':{content:'{}'}}})});
+    if(!r.ok){alert('Failed to create Gist (HTTP '+r.status+')');return}
+    const d=await r.json();gist=d.id;
+    document.getElementById('cfgGist').value=gist;
   }
   localStorage.setItem('tc_pat',pat);localStorage.setItem('tc_gist',gist);
+  ss('loading data from Gist…');
   // Try loading
   const data=await _tryGistLoad();
   if(data){
-    // If gist has data, load it
     if(data[A_KEY])try{aState=typeof data[A_KEY]==='string'?JSON.parse(data[A_KEY]):data[A_KEY]}catch(e){}
     if(data[B_KEY])try{bData=typeof data[B_KEY]==='string'?JSON.parse(data[B_KEY]):data[B_KEY]}catch(e){}
     if(data[E_KEY])try{eData=typeof data[E_KEY]==='string'?JSON.parse(data[E_KEY]):data[E_KEY]}catch(e){}
@@ -738,15 +743,19 @@ async function connectGist(){
     if(!eData.budgets)eData.budgets={...DEF_BUDGETS};if(!eData.rates)eData.rates={...DEF_RATES};
     if(!eData.customCats)eData.customCats=[];if(!pData.balances)pData.balances={};
   } else {
-    // Empty gist — push current local data up
     _gistCache={[A_KEY]:aState,[B_KEY]:bData,[E_KEY]:eData,[P_KEY]:pData};
     await _gistSave();
   }
   _sMode='cloud';
+  _rendered.clear();
   ITIN.forEach((_,i)=>itinSel.add(i));
-  buildReportSelects();
+  rebuildCatSelects();
   if(LOWDATA){renderTab('actions')}else{renderAllTabs()}
-  updateCfgStatus();ss('synced to GitHub · '+_ts());
+  updateCfgStatus();ss('✅ synced to GitHub · '+_ts());
+  }catch(err){
+    alert('Connect failed: '+err.message);
+    ss('connect error — see alert');
+  }
 }
 function disconnectGist(){localStorage.removeItem('tc_pat');localStorage.removeItem('tc_gist');_sMode='browser';_gistCache={};updateCfgStatus();ss('disconnected — browser storage only')}
 function updateCfgStatus(){
