@@ -421,7 +421,7 @@ footer .save-state{font-family:'JetBrains Mono',monospace;font-size:11px;margin-
       <tr><td style="color:var(--soon)">🟠 RECOMMENDED</td><td><b>Hep A</b> (by ~6/7), <b>Typhoid</b> (by ~6/14), <b>Polio IPV booster</b> (CDC rec for pilgrims), <b>MMR</b> (verify), <b>Flu</b>, routine Tdap/HepB/Varicella</td></tr>
       <tr><td>❌ Not needed</td><td>Yellow Fever (not from endemic area), Cholera, Rabies, COVID (not currently mandatory)</td></tr>
       <tr><td>Saudi e-Visa</td><td>visa.visitsaudi.com · $167/pax · 1-yr multi-entry · Covers Umrah</td></tr>
-      <tr><td>Egypt Visa</td><td>On-arrival at CAI · $25 cash/pax</td></tr>
+      <tr><td>Egypt Visa</td><td><b>Multi-entry e-visa — RECOMMENDED: $60/pax</b> at visa2egypt.gov.eg · Apply 7–10 days before departure · Covers Jun 22 arrival + Jul 11 re-entry from Madinah · On-arrival ($30) is single-entry only — does NOT cover Jul 11</td></tr>
       <tr><td>Apps</td><td><b>Nusuk</b> (mandatory for Umrah permits + Rawdah booking)</td></tr>
       <tr><td>Documents</td><td>ICVP/yellow card (vaccine record), passports (6+ mo validity), printed hotel confirmations</td></tr>
     </table></div>
@@ -673,7 +673,7 @@ document.getElementById('mainTabs').addEventListener('click',e=>{
 const PHASES=[
 {id:'w0',tag:'Wave 0',cls:'critical',title:'Do Today',sub:'Deadline-critical — start within 24–72 hours',items:[
   {type:'task',id:'T1',title:'Book travel-clinic appointment for all 8 (Atrium / Wake Forest)',who:'Adult 1',due:'TODAY',crit:true,note:'Vaccines need lead time. Meningococcal ACWY is MANDATORY for Saudi entry and must be ≥10 days before JED arrival (7/2) → by ~6/22. Hep A / Polio ideally by 6/7, Typhoid by ~6/14.'},
-  {type:'task',id:'T2',title:'Apply 8 Saudi e-visas at visa.visitsaudi.com',who:'All 8',due:'NOW (was 6/1)',crit:true,tel:'$167/pax',note:'1-yr multi-entry, covers Umrah. Allow processing time. Egypt visa is on-arrival ($25 cash).'},
+  {type:'task',id:'T2',title:'Apply 8 Saudi e-visas at visa.visitsaudi.com',who:'All 8',due:'NOW (was 6/1)',crit:true,tel:'$167/pax',note:'1-yr multi-entry, covers Umrah. Allow processing time. Egypt: RECOMMEND multi-entry e-visa $60 at visa2egypt.gov.eg — re-enters Egypt Jul 11; on-arrival ($30) is single-entry only.'},
   {type:'task',id:'T3',title:'Install Nusuk app, start Umrah permits, book Rawdah slots (7/7–7/10)',who:'All 8',due:'NOW',crit:true,note:'Mandatory for Umrah permits + Rawdah visits. Slots limited; grab 7/7–7/10 ASAP.'},
 ]},
 {id:'w1',tag:'Wave 1',cls:'soon',title:'This Week — Lock Bookings & Key Decisions',sub:'Availability + the decisions that shape everything',items:[
@@ -728,7 +728,7 @@ const PHASES=[
   {type:'task',id:'T27',title:'Pre-book Sharm excursions via DoubleTree concierge',who:'Adult 1',due:'Pre-trip',note:'Book via concierge to capture Resort Credit.'},
 ]},
 {id:'w4',tag:'Wave 4',cls:'during',title:'During the Trip — In-Destination',sub:'Don\'t miss these on the ground',items:[
-  {type:'task',id:'T28',title:'Egypt visa-on-arrival — $25 cash/pax (CAI, 6/22)',who:'All 8',due:'6/22',tel:'$25 cash'},
+  {type:'task',id:'T28',title:'Apply Egypt multi-entry e-visa — $60/pax at visa2egypt.gov.eg',who:'All 8',due:'Before departure',tel:'$60/pax × 8 = $480',val:'covers both entries',note:'Multi-entry covers Jun 22 arrival AND Jul 11 re-entry from Madinah. On-arrival ($30) = single-entry only — does NOT cover Jul 11. Apply 7–10 days before departure. Official site: visa2egypt.gov.eg'},
   {type:'task',id:'T29',title:'Request Diamond room upgrades at every Hilton check-in',who:'Adults 1–4',due:'At check-in',val:'1B upgrade',note:'Haram-view at Conrad/Madinah; sea/pool at DoubleTree.'},
   {type:'task',id:'T30',title:'Charge $100+ on-property at Conrad (if $100-credit rate)',who:'Adults 1–3',due:'During Makkah',val:'$300'},
   {type:'task',id:'T31',title:'MID-STAY FOLIO SPLIT at DoubleTree — evening 6/30',who:'Adults 1–4',due:'6/30',crit:true,val:'$800',note:'Settle folio 6/30 to capture $200 H1 + $200 H2 Resort Credit per card. Skipping forfeits $800.'},
@@ -873,7 +873,7 @@ const ITIN=[
 {date:'Jun 22',day:'Mon',loc:'cairo',title:'Arrive Cairo',items:[
   {t:'flight',v:'✈ BA 396 LHR→CAI arr ~17:25 Terminal 2'},
   {t:'hotel',v:'🏨 New Cairo Villa check-in (4BR, 6 nights)'},
-  {t:'act',v:'Egypt visa-on-arrival $25 cash/pax at T2'},
+  {t:'act',v:'Egypt e-visa (pre-applied) — present at T2 immigration'},
 ]},
 {date:'Jun 23',day:'Tue',loc:'cairo',title:'Cairo — Explore',items:[
   {t:'act',v:'Khan el-Khalili bazaar, Islamic Cairo, or Tahrir Egyptian Museum'},
