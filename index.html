@@ -197,6 +197,16 @@ footer .save-state{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;fon
 
 
 
+
+.edit{background:none;border:none;color:var(--faint);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px;transition:.15s;margin-right:2px}
+.edit:hover{color:var(--accent);background:rgba(216,164,74,.1)}
+.form-editing{border:1px solid var(--accent);border-radius:12px;padding:10px;margin:10px 0;background:rgba(216,164,74,.04)}
+.btn-cancel{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.05em;padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;text-transform:uppercase;font-weight:600;display:none}
+.btn-cancel.show{display:inline-block}
+.btn-cancel:hover{border-color:var(--critical);color:var(--critical)}
+.editing-badge{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:10px;color:var(--accent);padding:4px 8px;background:rgba(216,164,74,.1);border-radius:6px;display:none}
+.editing-badge.show{display:inline-block}
+
 .pay-other-wrap{display:none}.pay-other-wrap.show{display:flex}
 .pay-other-wrap input{min-width:120px;flex:1}
 .form-row2{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}
@@ -420,7 +430,9 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="eCur"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
     <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01">
     <input type="text" id="eDesc" placeholder="Description (optional)">
-    <button class="btn btn-add" onclick="addExpense()">+ Add</button>
+    <button class="btn btn-add" id="expAddBtn" onclick="addExpense()">+ Add</button>
+    <button class="btn btn-cancel" id="expCancelBtn" onclick="cancelEdit()">Cancel</button>
+    <span class="editing-badge" id="expEditBadge">✎ Editing</span>
     <button class="btn btn-clear" onclick="clearExpenses()">Reset</button>
   </div>
   <div class="filter-row"><span style="font-size:12px;color:var(--muted)">Filter:</span><select id="eFilter" onchange="renderExpenses()"><option value="all">All categories</option></select></div>
@@ -928,7 +940,7 @@ function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in t
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
 function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
-function renderExpenses(){const tb=document.getElementById('eTbody'),f=document.getElementById('eFilter').value;const l=eData.expenses.filter(e=>f==='all'||e.category===f).slice().reverse();if(!l.length){tb.innerHTML='<tr><td colspan="9" class="empty">No expenses yet — add one above</td></tr>';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${e.date}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('')}
+function renderExpenses(){const tb=document.getElementById('eTbody'),f=document.getElementById('eFilter').value;const l=eData.expenses.filter(e=>f==='all'||e.category===f).slice().reverse();if(!l.length){tb.innerHTML='<tr><td colspan="9" class="empty">No expenses yet — add one above</td></tr>';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${e.date}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('')}
 function addExpense(){let cat=document.getElementById('eCat').value;const cur=document.getElementById('eCur').value,amt=parseFloat(document.getElementById('eAmt').value),desc=document.getElementById('eDesc').value.trim();
   const purchaser=document.getElementById('ePurchaser').value;
   let payId=document.getElementById('ePay').value,payName='';
@@ -937,8 +949,14 @@ function addExpense(){let cat=document.getElementById('eCat').value;const cur=do
   if(cat==='__other__'){cat=document.getElementById('eCustomCat').value.trim();if(!cat){alert('Enter a category name');return}
     if(!eData.customCats)eData.customCats=[];if(!eData.customCats.includes(cat)&&!CATEGORIES.includes(cat)){eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
     document.getElementById('eCustomCat').value='';document.getElementById('eCat').value=cat;document.getElementById('customCatWrap').classList.remove('show')}
-  if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
-function delExp(id){eData.expenses=eData.expenses.filter(e=>e.id!==id);renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+  if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);if(_editingExpId){
+    const idx=eData.expenses.findIndex(x=>x.id===_editingExpId);
+    if(idx!==-1){eData.expenses[idx]={...eData.expenses[idx],category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName}}
+    _editingExpId=null;document.getElementById('expAddBtn').textContent='+ Add';document.getElementById('expCancelBtn').classList.remove('show');document.getElementById('expEditBadge').classList.remove('show');
+  } else {
+    eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
+  }document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+function delExp(id){if(_editingExpId===id)cancelEdit();eData.expenses=eData.expenses.filter(e=>e.id!==id);renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES}};document.getElementById('rateEGP').value=DEF_RATES.EGP;document.getElementById('rateSAR').value=DEF_RATES.SAR;rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 
 
@@ -1246,6 +1264,43 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))close
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSearch()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&_pendingSync)flushSync(true)});
 window.addEventListener('pagehide',()=>{if(_pendingSync)flushSync(true)});
+
+
+// ===================== EXPENSE EDITING =====================
+let _editingExpId=null;
+function editExp(id){
+  const e=eData.expenses.find(x=>x.id===id);
+  if(!e)return;
+  _editingExpId=id;
+  // Populate form fields
+  document.getElementById('ePurchaser').value=e.purchaser||'';
+  const payEl=document.getElementById('ePay');
+  if(e.payMethod&&[...payEl.options].some(o=>o.value===e.payMethod)){payEl.value=e.payMethod;document.getElementById('payOtherWrap').classList.remove('show')}
+  else if(e.payName){payEl.value='__other_pay__';document.getElementById('payOtherWrap').classList.add('show');document.getElementById('ePayOther').value=e.payName}
+  const catEl=document.getElementById('eCat');
+  if([...catEl.options].some(o=>o.value===e.category)){catEl.value=e.category;document.getElementById('customCatWrap').classList.remove('show')}
+  else{catEl.value='__other__';document.getElementById('customCatWrap').classList.add('show');document.getElementById('eCustomCat').value=e.category}
+  document.getElementById('eCur').value=e.currency;
+  document.getElementById('eAmt').value=e.amount;
+  document.getElementById('eDesc').value=e.desc||'';
+  // UI: switch to edit mode
+  document.getElementById('expAddBtn').textContent='Save Edit';
+  document.getElementById('expCancelBtn').classList.add('show');
+  document.getElementById('expEditBadge').classList.add('show');
+  // Scroll to form
+  document.getElementById('expAddBtn').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function cancelEdit(){
+  _editingExpId=null;
+  document.getElementById('ePurchaser').value='';
+  document.getElementById('ePay').value='';document.getElementById('payOtherWrap').classList.remove('show');
+  document.getElementById('eCat').value=allCats()[0]||'';document.getElementById('customCatWrap').classList.remove('show');
+  document.getElementById('eCur').value='USD';
+  document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';
+  document.getElementById('expAddBtn').textContent='+ Add';
+  document.getElementById('expCancelBtn').classList.remove('show');
+  document.getElementById('expEditBadge').classList.remove('show');
+}
 
 // ===================== COUNTDOWN =====================
 function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));document.getElementById('cdNum').textContent=d}
