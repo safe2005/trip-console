@@ -651,22 +651,38 @@ let _sMode='init',_gistCache={},_pendingSync=false,_syncTimer=null;
 function _ts(){return new Date().toLocaleTimeString()}
 function getCfg(){return{pat:localStorage.getItem('tc_pat')||'',gist:localStorage.getItem('tc_gist')||''}}
 
+
+// GitHub API helper: tries direct fetch, falls back to local proxy (server.py)
+async function _ghApi(method,url,headers,body){
+  // Try direct
+  try{
+    const opts={method,headers:{...headers,'Cache-Control':'no-cache'}};
+    if(body)opts.body=typeof body==='string'?body:JSON.stringify(body);
+    const r=await fetch(url+'?_='+Date.now(),opts);
+    if(r.ok)return{ok:true,status:r.status,data:await r.json()};
+    return{ok:false,status:r.status,data:null};
+  }catch(e){}
+  // Try local proxy (server.py)
+  try{
+    const r=await fetch('/api/github-proxy',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({method,url,headers,body:body?(typeof body==='string'?body:JSON.stringify(body)):undefined})});
+    if(r.ok){const d=await r.json();if(d.status>=200&&d.status<300)return{ok:true,status:d.status,data:d.body};return{ok:false,status:d.status,data:d.error}}
+  }catch(e){}
+  return{ok:false,status:0,data:null};
+}
+
 async function _tryGistLoad(){
   const c=getCfg();if(!c.pat||!c.gist)return null;
-  try{
-    const r=await fetch('https://api.github.com/gists/'+c.gist+'?_='+Date.now(),{headers:{'Authorization':'token '+c.pat,'Accept':'application/vnd.github.v3+json','Cache-Control':'no-cache'}});
-    if(!r.ok)throw new Error('API '+r.status);
-    const g=await r.json();const ct=g.files?.['trip_data.json']?.content;
-    _gistCache=ct?JSON.parse(ct):{};_sMode='cloud';return _gistCache;
-  }catch(e){return null}
+  const r=await _ghApi('GET','https://api.github.com/gists/'+c.gist,{'Authorization':'token '+c.pat,'Accept':'application/vnd.github.v3+json'});
+  if(r.ok&&r.data){const ct=r.data.files?.['trip_data.json']?.content;_gistCache=ct?JSON.parse(ct):{};_sMode='cloud';return _gistCache}
+  return null;
 }
 async function _gistSave(){
   const c=getCfg();if(!c.pat||!c.gist)return false;
-  try{
-    const r=await fetch('https://api.github.com/gists/'+c.gist+'?_='+Date.now(),{method:'PATCH',headers:{'Authorization':'token '+c.pat,'Content-Type':'application/json','Cache-Control':'no-cache'},
-      body:JSON.stringify({files:{'trip_data.json':{content:JSON.stringify(_gistCache,null,2)}}})});
-    return r.ok;
-  }catch(e){return false}
+  const r=await _ghApi('PATCH','https://api.github.com/gists/'+c.gist,
+    {'Authorization':'token '+c.pat,'Content-Type':'application/json'},
+    {files:{'trip_data.json':{content:JSON.stringify(_gistCache,null,2)}}});
+  return r.ok;
 }
 
 
@@ -716,18 +732,16 @@ async function connectGist(){
   if(!pat.startsWith('ghp_')&&!pat.startsWith('github_pat_')){alert('Token should start with ghp_ or github_pat_ — check you copied the full token');return}
   ss('connecting from: '+location.protocol+'//'+location.host+'…');
   // Verify token
-  let t;
-  try{t=await fetch('https://api.github.com/user?_='+Date.now(),{headers:{'Authorization':'token '+pat,'Cache-Control':'no-cache'}})}catch(fetchErr){alert('Network error reaching api.github.com.\n\nYou are on: '+location.href+'\n\nIf this is file:// — use https://safe2005.github.io/trip-console/ or run start.bat instead.\n\nIf this is https:// — check Firefox Enhanced Tracking Protection (shield icon in URL bar) or ad-blocker extensions.\n\nRaw error: '+fetchErr.message);ss('network blocked');return}
-  if(!t.ok){alert('Invalid token (HTTP '+t.status+'). Generate a new one at github.com/settings/tokens');return}
-  const user=await t.json();
+  const tResult=await _ghApi('GET','https://api.github.com/user',{'Authorization':'token '+pat,'Accept':'application/vnd.github.v3+json'});
+  if(!tResult.ok){alert('Cannot verify token (status '+tResult.status+').\nTry running start.bat for local proxy, or check your network.');ss('token verification failed');return}
+  const user=tResult.data;
   ss('token OK — user: '+user.login);
   // Create gist if needed
   if(!gist){
     ss('creating new Gist…');
-    const r=await fetch('https://api.github.com/gists?_='+Date.now(),{method:'POST',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
-      body:JSON.stringify({description:'Egypt+Umrah 2026 Trip Console Data','public':false,files:{'trip_data.json':{content:'{}'}}})});
-    if(!r.ok){alert('Failed to create Gist (HTTP '+r.status+')');return}
-    const d=await r.json();gist=d.id;
+    const cr=await _ghApi('POST','https://api.github.com/gists',{'Authorization':'token '+pat,'Content-Type':'application/json'},{description:'Egypt+Umrah 2026 Trip Console Data','public':false,files:{'trip_data.json':{content:'{}'}}});
+    if(!cr.ok){alert('Failed to create Gist (status '+cr.status+')');return}
+    gist=cr.data.id;
     document.getElementById('cfgGist').value=gist;
   }
   localStorage.setItem('tc_pat',pat);localStorage.setItem('tc_gist',gist);
