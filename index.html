@@ -723,11 +723,8 @@ const PHASES=[
   {type:'task',id:'T23',title:'Check Loyalty-Point balance vs 40K Gold',who:'Adult 1',due:'Anytime',note:'Flying the trip may push past Gold.'},
   {type:'task',id:'T24',title:'Save Amex Global Assist + insurance numbers to phones',who:'All',due:'Before trip'},
   {type:'task',id:'T25',title:'Confirm ALL bookings (flights, hotels, transport, day-use)',who:'Adult 1',due:'~1 wk out'},
-  {type:'gate',id:'GE',tag:'Decision Gate E',q:'Cairo evening — Nile dinner cruise or Corniche evening?',opts:[
-    {if:'Dinner cruise — best food & show',then:'Book Nile Maxim, weeknight, early seating, non-smoking table. Note: belly dancing.'},
-    {if:'Corniche — quieter, no belly dance',then:'Private felucca + Nile-view dinner (Sequoia) + Cairo Tower. ~$70–90/pax.'},
-  ]},
-  {type:'task',id:'T26',title:'Book Cairo evening + Pyramids/GEM day (6/25) + guide',who:'Adult 1',due:'Pre-trip',note:'GEM timed entry pre-book. Royal Mummies at NMEC, not GEM.'},
+
+  {type:'task',id:'T26',title:'Book Pyramids/GEM (6/25) + Alexandria transport (6/26) + Islamic Cairo guide (6/27)',who:'Adult 1',due:'Pre-trip',note:'GEM timed entry pre-book. Alexandria: arrange driver or train. Islamic Cairo (6/27): private Islamic history guide recommended for the mosque route.'},
   {type:'task',id:'T27',title:'Pre-book Sharm excursions via DoubleTree concierge',who:'Adult 1',due:'Pre-trip',note:'Book via concierge to capture Resort Credit.'},
 ]},
 {id:'w4',tag:'Wave 4',cls:'during',title:'During the Trip — In-Destination',sub:'Don\'t miss these on the ground',items:[
@@ -881,21 +878,30 @@ const ITIN=[
 {date:'Jun 23',day:'Tue',loc:'cairo',title:'Cairo — Explore',items:[
   {t:'act',v:'Khan el-Khalili bazaar, Islamic Cairo, or Tahrir Egyptian Museum'},
 ]},
-{date:'Jun 24',day:'Wed',loc:'cairo',title:'Cairo — Museums',items:[
-  {t:'act',v:'NMEC (Royal Mummies) · Islamic Art Museum · Coptic Museum'},
+{date:'Jun 24',day:'Wed',loc:'cairo',title:'Cairo — Explore',items:[
+  {t:'act',v:'Coptic Museum · Egyptian Museum (Tahrir) · or free day to explore'},
+  {t:'act',v:'Khan el-Khalili bazaar (if not saving for Saturday)'},
 ]},
 {date:'Jun 25',day:'Thu',loc:'cairo',title:'Pyramids + GEM Day',items:[
   {t:'act',v:'Pyramids of Giza (gates 7AM, morning)'},
   {t:'act',v:'Grand Egyptian Museum (timed entry, afternoon)'},
   {t:'act',v:'Private Egyptologist guide recommended for group of 8'},
 ]},
-{date:'Jun 26',day:'Fri',loc:'cairo',title:'Cairo — Friday',items:[
-  {t:'act',v:'Friday Prayer'},
-  {t:'act',v:'Evening: Nile Maxim dinner cruise OR Corniche felucca evening (Gate E)'},
+{date:'Jun 26',day:'Fri',loc:'cairo',title:'Day Trip to Alexandria',items:[
+  {t:'act',v:'Depart Cairo ~7AM (2.5–3hr drive or 2hr train from Ramses)'},
+  {t:'act',v:'Bibliotheca Alexandrina (modern library + museum)'},
+  {t:'act',v:"Jumu'ah prayer at a mosque in Alexandria (~12:59 PM)"},
+  {t:'act',v:'Seafood lunch on the Corniche'},
+  {t:'act',v:'Qaitbay Citadel (15th c. fortress, site of ancient Lighthouse)'},
+  {t:'act',v:'Montazah Palace gardens / Stanley Bridge / Corniche walk'},
+  {t:'act',v:'Return to Cairo ~6PM (arrive ~8:30–9PM)'},
 ]},
-{date:'Jun 27',day:'Sat',loc:'cairo',title:'Cairo — Last Day',items:[
-  {t:'act',v:'Cairo Tower · shopping · free day'},
-  {t:'act',v:'Pack for Sharm El Sheikh'},
+{date:'Jun 27',day:'Sat',loc:'cairo',title:'Citadel, Mosques & Islamic Art Museum',items:[
+  {t:'act',v:'Citadel of Saladin → Muhammad Ali Mosque (Alabaster Mosque) inside'},
+  {t:'act',v:'Sultan Hassan Mosque-Madrasa (1356, Mamluk masterpiece)'},
+  {t:'act',v:'Al-Rifa\'i Mosque (adjacent to Sultan Hassan, combined ticket)'},
+  {t:'act',v:'Museum of Islamic Art at Bab al-Khalq (~1hr)'},
+  {t:'act',v:'Pack for Sharm (depart next morning)'},
 ]},
 {date:'Jun 28',day:'Sun',loc:'sharm',title:'Transfer to Sharm',items:[
   {t:'flight',v:'✈ CAI→SSH (~1hr, Air Cairo/EgyptAir)'},
