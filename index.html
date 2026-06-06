@@ -787,13 +787,12 @@ function onPayChange(){document.getElementById('payOtherWrap').classList.toggle(
 function allCats(){return [...CATEGORIES,...(eData.customCats||[])]}
 function onCatChange(){document.getElementById('customCatWrap').classList.toggle('show',document.getElementById('eCat').value==='__other__')}
 function rebuildCatSelects(){
-  const es=document.getElementById('eCat'),ef=document.getElementById('eFilter');
-  const curE=es.value,curF=ef.value;
-  es.innerHTML='';ef.innerHTML='<option value="all">All categories</option>';
-  allCats().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;es.appendChild(o);ef.appendChild(o.cloneNode(true))});
+  const es=document.getElementById('eCat');
+  const curE=es?es.value:'';
+  if(es){es.innerHTML='';allCats().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;es.appendChild(o)});
   const ot=document.createElement('option');ot.value='__other__';ot.textContent='＋ Other (custom)';es.appendChild(ot);
-  if([...es.options].some(o=>o.value===curE))es.value=curE;
-  if([...ef.options].some(o=>o.value===curF))ef.value=curF;
+  if([...es.options].some(o=>o.value===curE))es.value=curE;}
+  buildReportSelects();
 }
 
 const DEF_BUDGETS={'Flights (AA/BA)':12800,'Regional Flights':4300,'Hotels':4900,'Transport':700,'Visas & Vaccines':2936,'Activities & Excursions':2000,'Food & Beverage':4600,'Insurance':400,'Shopping & Misc':2000};
