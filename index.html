@@ -694,31 +694,39 @@ async function flushSync(force){
 }
 
 async function sGet(key){
-  // Tier 1: GitHub cache
-  if(_sMode==='cloud'&&_gistCache[key]!==undefined){const v=typeof _gistCache[key]==='string'?_gistCache[key]:JSON.stringify(_gistCache[key]);return{value:v}}
-  // Tier 2: local server
+  // Tier 1: GitHub cloud cache is authoritative once connected. A key missing from the
+  // cache means "no data yet for this key" — it must NOT fall through to lower tiers,
+  // because those tiers reassign _sMode and silently demote the session out of cloud
+  // mode. That demotion was the root cause of saves landing in localStorage only.
+  if(_sMode==='cloud'){
+    if(_gistCache[key]!==undefined){const v=typeof _gistCache[key]==='string'?_gistCache[key]:JSON.stringify(_gistCache[key]);return{value:v}}
+    return null;
+  }
+  // Tier 2: local server (only when running under server.py; 404s harmlessly on GitHub Pages)
   try{const r=await fetch('/api/data');if(r.ok){const all=await r.json();_sMode='file';if(all[key]!==undefined)return{value:typeof all[key]==='string'?all[key]:JSON.stringify(all[key])};return null}}catch(e){}
-  // Tier 3: localStorage
-  try{const v=localStorage.getItem('tc_'+key);_sMode='browser';return v?{value:v}:null}catch(e){}
-  _sMode='memory';return null;
+  // Tier 3: localStorage (only reached when not already in cloud/file mode)
+  try{const v=localStorage.getItem('tc_'+key);if(_sMode!=='cloud'&&_sMode!=='file')_sMode='browser';return v?{value:v}:null}catch(e){}
+  if(_sMode!=='cloud'&&_sMode!=='file')_sMode='memory';return null;
 }
 
 async function sSet(key,value){
   const parsed=JSON.parse(value);
-  // Tier 1: GitHub
+  // Tier 1: GitHub cloud — once in cloud mode, STAY in cloud mode no matter what.
   if(_sMode==='cloud'){
     _gistCache[key]=parsed;
-    try{localStorage.setItem('tc_'+key,value)}catch(e){}
+    try{localStorage.setItem('tc_'+key,value)}catch(e){}            // offline mirror, not a mode change
     if(LOWDATA){_pendingSync=true;ss('saved · sync in ≤45s');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000);return}
-    if(await _gistSave()){ss('synced to GitHub · '+_ts());return}
+    if(await _gistSave()){_pendingSync=false;ss('synced to GitHub · '+_ts())}
+    else{_pendingSync=true;ss('saved locally · cloud sync will retry');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000)}
+    return;                                                          // never fall through to a browser-only demotion
   }
   // Tier 2: local server
   try{let all={};try{const r=await fetch('/api/data');if(r.ok)all=await r.json()}catch(e){}
     all[key]=parsed;const w=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(all)});
     if(w.ok){_sMode='file';ss('saved to file · '+_ts());return}}catch(e){}
   // Tier 3: localStorage
-  try{localStorage.setItem('tc_'+key,value);_sMode='browser';ss('saved to browser · '+_ts());return}catch(e){}
-  _sMode='memory';ss('in-memory only');
+  try{localStorage.setItem('tc_'+key,value);if(_sMode!=='cloud'&&_sMode!=='file')_sMode='browser';ss('saved to browser · '+_ts());return}catch(e){}
+  if(_sMode!=='cloud'&&_sMode!=='file')_sMode='memory';ss('in-memory only');
 }
 
 async function connectGist(){
@@ -834,7 +842,7 @@ async function loadAll(){
     const a=await sGet(A_KEY); if(a&&a.value) aState=JSON.parse(a.value);
     const b=await sGet(B_KEY); if(b&&b.value) bData=JSON.parse(b.value);
     const e=await sGet(E_KEY); if(e&&e.value) eData=JSON.parse(e.value);
-    ss('saved to artifact storage');
+    ss('loaded');
   }catch(e){memOnly=true;ss('in-memory only')}
   if(!aState.tasks)aState.tasks={}; if(!aState.gates)aState.gates={};
   if(!bData.txs)bData.txs=[]; if(!eData.expenses)eData.expenses=[];
@@ -1459,8 +1467,22 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   applyLowData(_ldPref);
   // Try GitHub first
   const cfg=getCfg();
-  if(cfg.pat&&cfg.gist){const gd=await _tryGistLoad();if(gd){_gistCache=gd}}
+  if(cfg.pat&&cfg.gist){
+    const gd=await _tryGistLoad();           // sets _sMode='cloud' + _gistCache on success
+    if(gd){
+      _gistCache=gd;
+      // Non-destructive migration: if any data lives only in this browser's localStorage
+      // (e.g. a key created before the last successful cloud sync), fold it into the cloud
+      // cache so reconnecting never drops it, and mark it for an immediate upward sync.
+      let _migrate=false;
+      [A_KEY,B_KEY,E_KEY,P_KEY].forEach(k=>{
+        if(_gistCache[k]===undefined){const lv=localStorage.getItem('tc_'+k);if(lv){try{_gistCache[k]=JSON.parse(lv)}catch(e){_gistCache[k]=lv}_migrate=true}}
+      });
+      if(_migrate)_pendingSync=true;
+    }
+  }
   await loadAll();
+  if(_sMode==='cloud'&&_pendingSync){await flushSync(true)}   // persist migrated keys to the gist now
   // populate selects
   const bs=document.getElementById('bCard');CARDS.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bs.appendChild(o)});
   rebuildCatSelects();
