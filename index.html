@@ -601,10 +601,9 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
   <div class="section-title">How It Works</div>
   <div class="ref-body" style="padding:0">
     <table>
-      <tr><td>Cloud mode (GitHub)</td><td>Data saved to a private Gist — accessible from any device/browser. Enter the same PAT + Gist ID on each device.</td></tr>
-      <tr><td>File mode (server.py)</td><td>Data saved to trip_data.json locally. Run start.bat on your computer. Cross-browser on that machine.</td></tr>
-      <tr><td>Browser mode</td><td>Data in localStorage — per-browser only. Works offline, but doesn't sync across devices.</td></tr>
-      <tr><td>Priority</td><td>Cloud → File → Browser. The console tries each in order and uses the first that works.</td></tr>
+      <tr><td>Cloud mode (GitHub)</td><td>Data saved to a private Gist — accessible from any device/browser, anywhere in the world. Enter the same PAT + Gist ID on each device.</td></tr>
+      <tr><td>Browser mode</td><td>Data in localStorage — per-browser offline fallback. Used only when GitHub is unreachable; syncs up to the cloud automatically once a connection is restored.</td></tr>
+      <tr><td>Priority</td><td>Cloud → Browser. The console always prefers the cloud Gist and falls back to this browser only if GitHub can't be reached.</td></tr>
     </table>
   </div>
   <div class="section-title">Setup for Mobile Access (One Time)</div>
@@ -621,7 +620,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 </div><!-- .wrap -->
 
 <footer>
-  One console — actions, card-spend targets, and trip expenses. Cloud sync via GitHub · Local via server.py · Browser fallback. Open the ⚙ Sync tab to configure.
+  One console — actions, card-spend targets, and trip expenses. Cloud sync via GitHub · browser offline fallback. Open the ⚙ Sync tab to configure.
   <div class="save-state" id="saveState">storage: initializing…</div>
 </footer>
 
@@ -648,27 +647,35 @@ function manualSync(){flushSync(true)}
 
 // ===================== STORAGE ABSTRACTION (3-tier: GitHub > server > browser) =====================
 let _sMode='init',_gistCache={},_pendingSync=false,_syncTimer=null;
+// Offline-edit tracking: keys changed while NOT connected to the cloud, so they can win and
+// be pushed up on the next successful connect instead of being overwritten by stale cloud
+// data. Persisted in localStorage so it survives reloads (matters on flaky/overseas networks).
+function _getPending(){try{return JSON.parse(localStorage.getItem('tc_pending')||'[]')}catch(e){return[]}}
+function _markPending(key){try{const p=_getPending();if(!p.includes(key)){p.push(key);localStorage.setItem('tc_pending',JSON.stringify(p))}}catch(e){}}
+function _clearPending(){try{localStorage.removeItem('tc_pending')}catch(e){}}
+// Fold local data into the cloud cache before loading: brand-new local keys AND offline-edited
+// (pending) keys override the cloud copy. Returns true if anything changed (=> needs push-up).
+function _reconcileLocal(){
+  let changed=false;const pend=_getPending();
+  [A_KEY,B_KEY,E_KEY,P_KEY].forEach(k=>{
+    const lv=localStorage.getItem('tc_'+k);if(!lv)return;
+    if(_gistCache[k]===undefined||pend.includes(k)){try{_gistCache[k]=JSON.parse(lv)}catch(e){_gistCache[k]=lv}changed=true;}
+  });
+  return changed;
+}
 function _ts(){return new Date().toLocaleTimeString()}
 function getCfg(){return{pat:localStorage.getItem('tc_pat')||'',gist:localStorage.getItem('tc_gist')||''}}
 
 
-// GitHub API helper: tries direct fetch, falls back to local proxy (server.py)
+// GitHub API helper — direct call to api.github.com (cloud-only; no local proxy)
 async function _ghApi(method,url,headers,body){
-  // Try direct
   try{
     const opts={method,headers:{...headers,'Cache-Control':'no-cache'}};
     if(body)opts.body=typeof body==='string'?body:JSON.stringify(body);
     const r=await fetch(url+'?_='+Date.now(),opts);
     if(r.ok)return{ok:true,status:r.status,data:await r.json()};
     return{ok:false,status:r.status,data:null};
-  }catch(e){}
-  // Try local proxy (server.py)
-  try{
-    const r=await fetch('/api/github-proxy',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({method,url,headers,body:body?(typeof body==='string'?body:JSON.stringify(body)):undefined})});
-    if(r.ok){const d=await r.json();if(d.status>=200&&d.status<300)return{ok:true,status:d.status,data:d.body};return{ok:false,status:d.status,data:d.error}}
-  }catch(e){}
-  return{ok:false,status:0,data:null};
+  }catch(e){return{ok:false,status:0,data:null,err:(e&&e.message)||'network error'}}
 }
 
 async function _tryGistLoad(){
@@ -695,18 +702,14 @@ async function flushSync(force){
 
 async function sGet(key){
   // Tier 1: GitHub cloud cache is authoritative once connected. A key missing from the
-  // cache means "no data yet for this key" — it must NOT fall through to lower tiers,
-  // because those tiers reassign _sMode and silently demote the session out of cloud
-  // mode. That demotion was the root cause of saves landing in localStorage only.
+  // cache means "no data yet for this key" — return null rather than demoting the session.
   if(_sMode==='cloud'){
     if(_gistCache[key]!==undefined){const v=typeof _gistCache[key]==='string'?_gistCache[key]:JSON.stringify(_gistCache[key]);return{value:v}}
     return null;
   }
-  // Tier 2: local server (only when running under server.py; 404s harmlessly on GitHub Pages)
-  try{const r=await fetch('/api/data');if(r.ok){const all=await r.json();_sMode='file';if(all[key]!==undefined)return{value:typeof all[key]==='string'?all[key]:JSON.stringify(all[key])};return null}}catch(e){}
-  // Tier 3: localStorage (only reached when not already in cloud/file mode)
-  try{const v=localStorage.getItem('tc_'+key);if(_sMode!=='cloud'&&_sMode!=='file')_sMode='browser';return v?{value:v}:null}catch(e){}
-  if(_sMode!=='cloud'&&_sMode!=='file')_sMode='memory';return null;
+  // Tier 2: browser localStorage (offline fallback — used only when not connected to cloud)
+  try{const v=localStorage.getItem('tc_'+key);if(_sMode!=='cloud')_sMode='browser';return v?{value:v}:null}catch(e){}
+  if(_sMode!=='cloud')_sMode='memory';return null;
 }
 
 async function sSet(key,value){
@@ -720,13 +723,9 @@ async function sSet(key,value){
     else{_pendingSync=true;ss('saved locally · cloud sync will retry');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000)}
     return;                                                          // never fall through to a browser-only demotion
   }
-  // Tier 2: local server
-  try{let all={};try{const r=await fetch('/api/data');if(r.ok)all=await r.json()}catch(e){}
-    all[key]=parsed;const w=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(all)});
-    if(w.ok){_sMode='file';ss('saved to file · '+_ts());return}}catch(e){}
-  // Tier 3: localStorage
-  try{localStorage.setItem('tc_'+key,value);if(_sMode!=='cloud'&&_sMode!=='file')_sMode='browser';ss('saved to browser · '+_ts());return}catch(e){}
-  if(_sMode!=='cloud'&&_sMode!=='file')_sMode='memory';ss('in-memory only');
+  // Tier 2: browser localStorage (offline fallback) — record as pending so it syncs up on reconnect
+  try{localStorage.setItem('tc_'+key,value);_markPending(key);if(_sMode!=='cloud')_sMode='browser';ss('saved offline · will sync when GitHub is reachable · '+_ts());return}catch(e){}
+  if(_sMode!=='cloud')_sMode='memory';ss('in-memory only');
 }
 
 async function connectGist(){
@@ -741,7 +740,7 @@ async function connectGist(){
   ss('connecting from: '+location.protocol+'//'+location.host+'…');
   // Verify token
   const tResult=await _ghApi('GET','https://api.github.com/user',{'Authorization':'token '+pat,'Accept':'application/vnd.github.v3+json'});
-  if(!tResult.ok){alert('Cannot verify token (status '+tResult.status+').\nTry running start.bat for local proxy, or check your network.');ss('token verification failed');return}
+  if(!tResult.ok){alert('Cannot verify token (status '+tResult.status+').\nCheck the token is valid and that this network/VPN can reach github.com. If GitHub is blocked here, your data still saves in this browser and will sync once GitHub is reachable.');ss('token verification failed');return}
   const user=tResult.data;
   ss('token OK — user: '+user.login);
   // Create gist if needed
@@ -757,6 +756,7 @@ async function connectGist(){
   // Try loading
   const data=await _tryGistLoad();
   if(data){
+    const _chg=_reconcileLocal();   // offline edits / new local keys win over the cloud copy
     if(data[A_KEY])try{aState=typeof data[A_KEY]==='string'?JSON.parse(data[A_KEY]):data[A_KEY]}catch(e){}
     if(data[B_KEY])try{bData=typeof data[B_KEY]==='string'?JSON.parse(data[B_KEY]):data[B_KEY]}catch(e){}
     if(data[E_KEY])try{eData=typeof data[E_KEY]==='string'?JSON.parse(data[E_KEY]):data[E_KEY]}catch(e){}
@@ -765,9 +765,12 @@ async function connectGist(){
     if(!bData.txs)bData.txs=[];if(!eData.expenses)eData.expenses=[];
     if(!eData.budgets)eData.budgets={...DEF_BUDGETS};if(!eData.rates)eData.rates={...DEF_RATES};
     if(!eData.customCats)eData.customCats=[];if(!pData.balances)pData.balances={};
+    if(_chg)await _gistSave();   // push reconciled offline edits up to the cloud
+    _clearPending();
   } else {
     _gistCache={[A_KEY]:aState,[B_KEY]:bData,[E_KEY]:eData,[P_KEY]:pData};
     await _gistSave();
+    _clearPending();
   }
   _sMode='cloud';
   _rendered.clear();
@@ -776,7 +779,7 @@ async function connectGist(){
   if(LOWDATA){renderTab('actions')}else{renderAllTabs()}
   updateCfgStatus();ss('✅ synced to GitHub · '+_ts());
   }catch(err){
-    alert('Connect failed at step: '+(_sMode||'init')+'\n\nURL: '+location.href+'\n\nError: '+err.message+'\n\nIf file:// → use the GitHub Pages URL or start.bat\nIf https:// → check Firefox shield icon / ad blocker');
+    alert('Connect failed at step: '+(_sMode||'init')+'\n\nURL: '+location.href+'\n\nError: '+err.message+'\n\nIf the GitHub API is blocked on this network, try another network or a VPN.\nIf your browser is blocking the request, turn off "Prevent Cross-Site Tracking" / disable ad-block for this site.');
     ss('connect error — see alert');
   }
 }
@@ -1471,18 +1474,14 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
     const gd=await _tryGistLoad();           // sets _sMode='cloud' + _gistCache on success
     if(gd){
       _gistCache=gd;
-      // Non-destructive migration: if any data lives only in this browser's localStorage
-      // (e.g. a key created before the last successful cloud sync), fold it into the cloud
-      // cache so reconnecting never drops it, and mark it for an immediate upward sync.
-      let _migrate=false;
-      [A_KEY,B_KEY,E_KEY,P_KEY].forEach(k=>{
-        if(_gistCache[k]===undefined){const lv=localStorage.getItem('tc_'+k);if(lv){try{_gistCache[k]=JSON.parse(lv)}catch(e){_gistCache[k]=lv}_migrate=true}}
-      });
-      if(_migrate)_pendingSync=true;
+      // Reconcile: brand-new local keys AND any offline edits override the cloud copy, so
+      // nothing made while offline is lost; mark for an immediate push-up, then clear flags.
+      if(_reconcileLocal())_pendingSync=true;
+      _clearPending();
     }
   }
   await loadAll();
-  if(_sMode==='cloud'&&_pendingSync){await flushSync(true)}   // persist migrated keys to the gist now
+  if(_sMode==='cloud'&&_pendingSync){await flushSync(true)}   // persist reconciled data to the gist now
   // populate selects
   const bs=document.getElementById('bCard');CARDS.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bs.appendChild(o)});
   rebuildCatSelects();
@@ -1492,7 +1491,7 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
   document.getElementById('searchInput').addEventListener('input',onSearchInput);
-  ss(_sMode==='cloud'?'✅ cloud mode (GitHub Gist)':_sMode==='file'?'💻 file mode (trip_data.json)':_sMode==='browser'?'⚠️ browser only (open ⚙ Sync to connect GitHub)':'⚠️ in-memory only');
+  ss(_sMode==='cloud'?'✅ cloud mode (GitHub Gist)':_sMode==='browser'?'⚠️ browser only (open ⚙ Sync to connect GitHub)':'⚠️ in-memory only');
   updateCfgStatus();
   // Pre-fill settings
   const _c=getCfg();if(_c.pat)document.getElementById('cfgPat').value=_c.pat;if(_c.gist)document.getElementById('cfgGist').value=_c.gist;
