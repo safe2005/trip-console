@@ -766,9 +766,9 @@ async function loadAll(){
   if(!eData.budgets)eData.budgets={...DEF_BUDGETS}; if(!eData.rates)eData.rates={...DEF_RATES};
   if(!eData.customCats)eData.customCats=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
 }
-async function saveA(){if(memOnly)return;try{await sSet(A_KEY,JSON.stringify(aState));ss('saved · '+new Date().toLocaleTimeString())}catch(e){memOnly=true;ss('in-memory')}}
-async function saveB(){if(memOnly)return;try{await sSet(B_KEY,JSON.stringify(bData));ss('saved · '+new Date().toLocaleTimeString())}catch(e){memOnly=true;ss('in-memory')}}
-async function saveE(){if(memOnly)return;try{await sSet(E_KEY,JSON.stringify(eData));ss('saved · '+new Date().toLocaleTimeString())}catch(e){memOnly=true;ss('in-memory')}}
+async function saveA(){try{await sSet(A_KEY,JSON.stringify(aState))}catch(e){}}
+async function saveB(){try{await sSet(B_KEY,JSON.stringify(bData))}catch(e){}}
+async function saveE(){try{await sSet(E_KEY,JSON.stringify(eData))}catch(e){}}
 
 // ===================== TAB SWITCHING =====================
 document.getElementById('mainTabs').addEventListener('click',e=>{
@@ -957,7 +957,7 @@ const POINT_ACCOUNTS=[
 const P_KEY='egypt_trip_points_v1';
 let pData={balances:{}};
 async function loadP(){try{const r=await sGet(P_KEY);if(r&&r.value)pData=JSON.parse(r.value)}catch(e){}if(!pData.balances)pData.balances={}}
-async function saveP(){if(memOnly)return;try{await sSet(P_KEY,JSON.stringify(pData));ss('saved · '+new Date().toLocaleTimeString())}catch(e){}}
+async function saveP(){try{await sSet(P_KEY,JSON.stringify(pData))}catch(e){}}
 
 function getBonusStatus(acct){
   if(!acct.src||!acct.bonus) return {earned:false,amount:0,note:'—'};
@@ -1257,7 +1257,7 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
   document.getElementById('searchInput').addEventListener('input',onSearchInput);
-  ss(_sMode==='cloud'?'synced to GitHub':_sMode==='file'?'file storage (trip_data.json)':_sMode==='browser'?'browser storage (localStorage)':'in-memory only');
+  ss(_sMode==='cloud'?'✅ cloud mode (GitHub Gist)':_sMode==='file'?'💻 file mode (trip_data.json)':_sMode==='browser'?'⚠️ browser only (open ⚙ Sync to connect GitHub)':'⚠️ in-memory only');
   updateCfgStatus();
   // Pre-fill settings
   const _c=getCfg();if(_c.pat)document.getElementById('cfgPat').value=_c.pat;if(_c.gist)document.getElementById('cfgGist').value=_c.gist;
