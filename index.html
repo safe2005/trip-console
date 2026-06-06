@@ -203,6 +203,38 @@ footer .save-state{font-family:'JetBrains Mono',monospace;font-size:11px;margin-
 .form-row2 select,.form-row2 input{font-family:'JetBrains Mono',monospace;font-size:13px;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;transition:.18s}
 .form-row2 select:focus,.form-row2 input:focus{border-color:var(--accent)}
 .form-row2 select{min-width:160px;cursor:pointer}
+
+/* Global search */
+.search-wrap{position:relative;min-width:200px;flex:1;max-width:320px}
+.search-input{width:100%;font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 12px 9px 32px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);outline:none;transition:.18s}
+.search-input:focus{border-color:var(--accent);background:var(--surface2)}
+.search-input::placeholder{color:var(--faint)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:14px;pointer-events:none}
+.search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;padding:2px 4px;display:none}
+.search-clear.show{display:block}
+.search-clear:hover{color:var(--text)}
+.search-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;max-height:420px;overflow-y:auto;z-index:200;display:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.search-dropdown.open{display:block}
+.search-count{padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.sr{display:flex;gap:10px;padding:10px 14px;cursor:pointer;transition:background .12s;border-bottom:1px solid var(--border);align-items:flex-start}
+.sr:last-child{border-bottom:none}
+.sr:hover{background:var(--surface2)}
+.sr-tab{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);white-space:nowrap;flex-shrink:0;margin-top:2px}
+.sr-tab.t-actions{color:var(--accent2);border-color:rgba(216,164,74,.3)}
+.sr-tab.t-itinerary{color:#2bb5a0;border-color:rgba(43,181,160,.3)}
+.sr-tab.t-benefits{color:var(--ok);border-color:rgba(84,178,122,.3)}
+.sr-tab.t-expenses{color:var(--decision);border-color:rgba(95,160,219,.3)}
+.sr-tab.t-reference{color:var(--muted);border-color:var(--border)}
+.sr-tab.t-settings{color:var(--muted)}
+.sr-body{flex:1;min-width:0}
+.sr-title{font-size:13px;font-weight:600}
+.sr-title mark{background:var(--accent);color:#1b1305;border-radius:2px;padding:0 2px}
+.sr-section{font-size:11px;color:var(--faint);margin-top:1px}
+.sr-none{padding:20px;text-align:center;color:var(--faint);font-style:italic}
+.search-highlight{animation:shl .6s ease 2}
+@keyframes shl{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 3px var(--accent),0 0 20px rgba(216,164,74,.3)}}
+@media(max-width:560px){.search-wrap{order:5;max-width:100%;min-width:0;width:100%}}
+
 .custom-cat-wrap{display:none;margin-top:-4px}
 .custom-cat-wrap.show{display:flex}
 .custom-cat-wrap input{flex:1;min-width:140px}
@@ -265,6 +297,12 @@ footer .save-state{font-family:'JetBrains Mono',monospace;font-size:11px;margin-
     <div class="brand">
       <div class="kicker">Strategic Initiatives · Trip Operations</div>
       <div class="htitle">Egypt + <em>Umrah</em> 2026</div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search everything…" autocomplete="off">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+      <div class="search-dropdown" id="searchDrop"></div>
     </div>
     <div class="countdown">
       <div class="cd-num" id="cdNum">—</div>
@@ -1019,6 +1057,97 @@ function printItin(){if(!itinSel.size){alert('Select at least one day first');re
   h+='<footer>Generated from Trip Operations Console</footer></body></html>';
   w.document.write(h);w.document.close();setTimeout(()=>w.print(),300)}
 
+
+// ===================== GLOBAL SEARCH =====================
+function buildIndex(){
+  const items=[];
+  // Tasks + Gates
+  PHASES.forEach(p=>{p.items.forEach(item=>{
+    if(item.type==='task'){items.push({text:[item.title,item.note||'',item.who||'',item.due||'',item.tel||'',item.val||''].join(' '),label:item.id+': '+item.title,tab:'actions',section:p.title,elQ:'[data-tid="'+item.id+'"]',pri:3})}
+    else if(item.type==='gate'){const ot=item.opts.map(o=>o.if+' '+o.then).join(' ');items.push({text:[item.q,item.tag,ot].join(' '),label:item.tag+': '+item.q.slice(0,60),tab:'actions',section:p.title,elQ:'.gate',gateId:item.id,pri:2})}
+  })});
+  // Itinerary
+  ITIN.forEach((d,i)=>{const it=d.items.map(x=>x.v).join(' ');items.push({text:[d.date,d.day,d.title,d.loc,it].join(' '),label:d.date+' ('+d.day+'): '+d.title,tab:'itinerary',section:d.loc,elQ:'[data-idx="'+i+'"]',pri:3})});
+  // Cards
+  CARDS.forEach(c=>{items.push({text:c.name+' '+c.target+' aspire citi welcome bonus',label:c.name,tab:'benefits',section:'Card Spend',elQ:'#cardsGrid',pri:1})});
+  // Points
+  POINT_ACCOUNTS.forEach(a=>{items.push({text:a.name+' '+a.prog+' '+a.unit+' hilton aadvantage loyalty',label:a.name,tab:'benefits',section:'Points',elQ:'#pointsGrid',pri:1})});
+  // Dynamic expenses
+  (eData.expenses||[]).forEach(e=>{items.push({text:[e.category,e.desc||'',e.purchaser||'',e.payName||'',e.currency,String(e.amount)].join(' '),label:'Expense: '+(e.desc||e.category)+' ($'+Math.round(e.usdAmount)+')',tab:'expenses',section:e.category,elQ:'#eTbody',pri:1})});
+  // Dynamic benefit txs
+  (bData.txs||[]).forEach(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;items.push({text:[cn,t.desc||'',String(t.amount)].join(' '),label:'Card spend: '+(t.desc||cn)+' ($'+Math.round(t.amount)+')',tab:'benefits',section:'Transactions',elQ:'#bTbody',pri:1})});
+  // Reference sections (from DOM)
+  document.querySelectorAll('.ref-section').forEach(s=>{const h=s.querySelector('.ref-head')?.textContent||'';const b=s.querySelector('.ref-body')?.textContent||'';items.push({text:h+' '+b,label:h.replace('▼','').trim(),tab:'reference',section:'Reference',elQ:'#'+s.id,pri:2})});
+  // Settings
+  items.push({text:'github sync gist token pat cloud settings connect disconnect',label:'GitHub Sync Settings',tab:'settings',section:'Settings',elQ:'#cfgStatus',pri:1});
+  return items;
+}
+
+function scoreItem(item,q){
+  const t=item.text.toLowerCase(),ql=q.toLowerCase();
+  if(!t.includes(ql))return 0;
+  let s=item.pri;
+  if(t.startsWith(ql))s+=5;
+  const words=t.split(/\s+/);
+  if(words.some(w=>w.startsWith(ql)))s+=3;
+  if(words.some(w=>w===ql))s+=4;
+  const cnt=(t.match(new RegExp(ql.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length;
+  s+=Math.min(cnt,4);
+  return s;
+}
+
+function highlightText(text,q){
+  if(!q)return text;
+  const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return text.replace(re,'<mark>$1</mark>');
+}
+
+let _searchTimeout=null;
+function onSearchInput(){
+  clearTimeout(_searchTimeout);
+  const q=document.getElementById('searchInput').value.trim();
+  document.getElementById('searchClear').classList.toggle('show',q.length>0);
+  if(q.length<2){document.getElementById('searchDrop').classList.remove('open');return}
+  _searchTimeout=setTimeout(()=>{
+    const idx=buildIndex();
+    const scored=idx.map(it=>({...it,score:scoreItem(it,q)})).filter(it=>it.score>0).sort((a,b)=>b.score-a.score).slice(0,20);
+    const dd=document.getElementById('searchDrop');
+    if(!scored.length){dd.innerHTML='<div class="sr-none">No results for "'+q+'"</div>';dd.classList.add('open');return}
+    dd.innerHTML='<div class="search-count">'+scored.length+' result'+(scored.length===1?'':'s')+'</div>'+scored.map((r,i)=>
+      '<div class="sr" data-sri="'+i+'" onclick="goToResult(searchResults['+i+'])"><span class="sr-tab t-'+r.tab+'">'+r.tab+'</span><div class="sr-body"><div class="sr-title">'+highlightText(r.label,q)+'</div><div class="sr-section">'+r.section+'</div></div></div>'
+    ).join('');
+    dd.classList.add('open');
+    window.searchResults=scored;
+  },180);
+}
+
+function goToResult(r){
+  // Switch tab
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('on'));
+  const tabBtn=document.querySelector('.mtab[data-tab="'+r.tab+'"]');
+  if(tabBtn)tabBtn.classList.add('on');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById('panel-'+r.tab);
+  if(panel)panel.classList.add('active');
+  // Expand collapsed sections if needed
+  if(r.tab==='reference'){document.querySelectorAll('.ref-section.collapsed').forEach(s=>s.classList.remove('collapsed'))}
+  if(r.tab==='actions'){document.querySelectorAll('.phase.collapsed').forEach(p=>p.classList.remove('collapsed'))}
+  // Scroll to element
+  setTimeout(()=>{
+    let el=null;
+    if(r.gateId){el=document.querySelector('[data-gate="'+r.gateId+'"]');if(el)el=el.closest('.gate')}
+    else if(r.elQ){el=document.querySelector(r.elQ)}
+    if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('search-highlight');setTimeout(()=>el.classList.remove('search-highlight'),2500)}
+  },150);
+  closeSearch();
+}
+
+function clearSearch(){document.getElementById('searchInput').value='';document.getElementById('searchDrop').classList.remove('open');document.getElementById('searchClear').classList.remove('show')}
+function closeSearch(){document.getElementById('searchDrop').classList.remove('open')}
+
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))closeSearch()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSearch()});
+
 // ===================== COUNTDOWN =====================
 function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));document.getElementById('cdNum').textContent=d}
 
@@ -1036,6 +1165,7 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   document.getElementById('rateEGP').value=eData.rates.EGP;document.getElementById('rateSAR').value=eData.rates.SAR;
   ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
+  document.getElementById('searchInput').addEventListener('input',onSearchInput);
   ss(_sMode==='cloud'?'synced to GitHub':_sMode==='file'?'file storage (trip_data.json)':_sMode==='browser'?'browser storage (localStorage)':'in-memory only');
   updateCfgStatus();
   // Pre-fill settings
