@@ -198,6 +198,27 @@ footer .save-state{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;fon
 
 
 
+
+/* Report & filters */
+.report-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0}
+.report-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.report-row select,.report-row input{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none}
+.report-row select:focus,.report-row input:focus{border-color:var(--accent)}
+.report-row select{min-width:130px;cursor:pointer}
+.report-row input[type=text]{flex:1;min-width:160px}
+.report-row input[type=date]{width:130px}
+.report-row label{font-size:11px;color:var(--muted);white-space:nowrap}
+.report-summary{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.report-stat{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:12px}
+.report-stat b{color:var(--accent2);font-size:14px}
+.btn-filter{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;padding:7px 14px;border-radius:7px;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.btn-filter-apply{background:var(--accent);color:#1b1305}.btn-filter-apply:hover{background:var(--accent2)}
+.btn-filter-clear{background:none;border:1px solid var(--border);color:var(--faint)}.btn-filter-clear:hover{color:var(--text)}
+.due-overdue{color:var(--critical);font-weight:600}
+.due-soon{color:var(--soon);font-weight:600}
+.due-future{color:var(--ok)}
+.due-none{color:var(--faint);font-style:italic}
+
 .edit{background:none;border:none;color:var(--faint);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px;transition:.15s;margin-right:2px}
 .edit:hover{color:var(--accent);background:rgba(216,164,74,.1)}
 .form-editing{border:1px solid var(--accent);border-radius:12px;padding:10px;margin:10px 0;background:rgba(216,164,74,.04)}
@@ -430,13 +451,31 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="eCur"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
     <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01">
     <input type="text" id="eDesc" placeholder="Description (optional)">
+    <input type="date" id="eDue" title="Payment due date (optional)">
     <button class="btn btn-add" id="expAddBtn" onclick="addExpense()">+ Add</button>
     <button class="btn btn-cancel" id="expCancelBtn" onclick="cancelEdit()">Cancel</button>
     <span class="editing-badge" id="expEditBadge">✎ Editing</span>
     <button class="btn btn-clear" onclick="clearExpenses()">Reset</button>
   </div>
-  <div class="filter-row"><span style="font-size:12px;color:var(--muted)">Filter:</span><select id="eFilter" onchange="renderExpenses()"><option value="all">All categories</option></select></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Purchaser</th><th>Payment</th><th>Category</th><th>Cur</th><th>Amount</th><th>USD</th><th>Description</th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
+  <div class="section-title">Report & Filter</div>
+  <div class="report-box">
+    <div class="report-row">
+      <label>Category</label><select id="rfCat"><option value="all">All</option></select>
+      <label>Purchaser</label><select id="rfPur"><option value="all">All</option></select>
+      <label>Payment</label><select id="rfPay"><option value="all">All</option></select>
+      <label>Currency</label><select id="rfCur"><option value="all">All</option><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
+    </div>
+    <div class="report-row">
+      <label>Due</label><select id="rfDue"><option value="all">All</option><option value="overdue">Overdue</option><option value="soon">Due ≤7 days</option><option value="nodue">No due date</option><option value="hasdue">Has due date</option></select>
+      <label>Search</label><input type="text" id="rfSearch" placeholder="Free text search across all fields…">
+    </div>
+    <div class="report-row">
+      <button class="btn-filter btn-filter-apply" onclick="applyReport()">Apply</button>
+      <button class="btn-filter btn-filter-clear" onclick="clearReport()">Clear</button>
+    </div>
+    <div class="report-summary" id="reportSummary"></div>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Purchaser</th><th>Payment</th><th>Category</th><th>Cur</th><th>Amount</th><th>USD</th><th>Description</th><th>Due</th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
 </div>
 
 
@@ -705,6 +744,7 @@ async function connectGist(){
   }
   _sMode='cloud';
   ITIN.forEach((_,i)=>itinSel.add(i));
+  buildReportSelects();
   if(LOWDATA){renderTab('actions')}else{renderAllTabs()}
   updateCfgStatus();ss('synced to GitHub · '+_ts());
 }
@@ -940,7 +980,11 @@ function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in t
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
 function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
-function renderExpenses(){const tb=document.getElementById('eTbody'),f=document.getElementById('eFilter').value;const l=eData.expenses.filter(e=>f==='all'||e.category===f).slice().reverse();if(!l.length){tb.innerHTML='<tr><td colspan="9" class="empty">No expenses yet — add one above</td></tr>';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${e.date}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('')}
+function renderExpenses(){const tb=document.getElementById('eTbody');const l=getFilteredExpenses().slice().reverse();if(!l.length){tb.innerHTML='<tr><td colspan="10" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${e.date}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');
+  // Report summary
+  const total=l.reduce((s,e)=>s+e.usdAmount,0);
+  const rs=document.getElementById('reportSummary');
+  if(rs)rs.innerHTML='<div class="report-stat">Showing <b>'+l.length+'</b> of '+eData.expenses.length+' expenses</div><div class="report-stat">Total: <b>$'+Math.round(total).toLocaleString()+'</b> USD</div>'}
 function addExpense(){let cat=document.getElementById('eCat').value;const cur=document.getElementById('eCur').value,amt=parseFloat(document.getElementById('eAmt').value),desc=document.getElementById('eDesc').value.trim();
   const purchaser=document.getElementById('ePurchaser').value;
   let payId=document.getElementById('ePay').value,payName='';
@@ -951,11 +995,11 @@ function addExpense(){let cat=document.getElementById('eCat').value;const cur=do
     document.getElementById('eCustomCat').value='';document.getElementById('eCat').value=cat;document.getElementById('customCatWrap').classList.remove('show')}
   if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);if(_editingExpId){
     const idx=eData.expenses.findIndex(x=>x.id===_editingExpId);
-    if(idx!==-1){eData.expenses[idx]={...eData.expenses[idx],category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName}}
+    const dueDateE=document.getElementById('eDue').value||'';if(idx!==-1){eData.expenses[idx]={...eData.expenses[idx],category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDateE}}
     _editingExpId=null;document.getElementById('expAddBtn').textContent='+ Add';document.getElementById('expCancelBtn').classList.remove('show');document.getElementById('expEditBadge').classList.remove('show');
   } else {
-    eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
-  }document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+    const dueDate=document.getElementById('eDue').value||'';eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDate,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
+  }document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';document.getElementById('eDue').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function delExp(id){if(_editingExpId===id)cancelEdit();eData.expenses=eData.expenses.filter(e=>e.id!==id);renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES}};document.getElementById('rateEGP').value=DEF_RATES.EGP;document.getElementById('rateSAR').value=DEF_RATES.SAR;rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 
@@ -1188,7 +1232,7 @@ function buildIndex(){
   // Points
   POINT_ACCOUNTS.forEach(a=>{items.push({text:a.name+' '+a.prog+' '+a.unit+' hilton aadvantage loyalty',label:a.name,tab:'benefits',section:'Points',elQ:'#pointsGrid',pri:1})});
   // Dynamic expenses
-  (eData.expenses||[]).forEach(e=>{items.push({text:[e.category,e.desc||'',e.purchaser||'',e.payName||'',e.currency,String(e.amount)].join(' '),label:'Expense: '+(e.desc||e.category)+' ($'+Math.round(e.usdAmount)+')',tab:'expenses',section:e.category,elQ:'#eTbody',pri:1})});
+  (eData.expenses||[]).forEach(e=>{items.push({text:[e.category,e.desc||'',e.purchaser||'',e.payName||'',e.currency,String(e.amount),e.dueDate||''].join(' '),label:'Expense: '+(e.desc||e.category)+' ($'+Math.round(e.usdAmount)+')',tab:'expenses',section:e.category,elQ:'#eTbody',pri:1})});
   // Dynamic benefit txs
   (bData.txs||[]).forEach(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;items.push({text:[cn,t.desc||'',String(t.amount)].join(' '),label:'Card spend: '+(t.desc||cn)+' ($'+Math.round(t.amount)+')',tab:'benefits',section:'Transactions',elQ:'#bTbody',pri:1})});
   // Reference sections (from DOM)
@@ -1266,6 +1310,84 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&_pendingSy
 window.addEventListener('pagehide',()=>{if(_pendingSync)flushSync(true)});
 
 
+
+// ===================== REPORT & FILTER =====================
+let _reportFilter={cat:'all',pur:'all',pay:'all',cur:'all',due:'all',search:''};
+
+function buildReportSelects(){
+  const rc=document.getElementById('rfCat'),rp=document.getElementById('rfPur'),ry=document.getElementById('rfPay');
+  if(!rc)return;
+  const curCat=rc.value,curPur=rp.value,curPay=ry.value;
+  rc.innerHTML='<option value="all">All</option>';rp.innerHTML='<option value="all">All</option>';ry.innerHTML='<option value="all">All</option>';
+  allCats().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;rc.appendChild(o)});
+  PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;rp.appendChild(o)});
+  PAY_METHODS.forEach(p=>{if(p.id!=='__other_pay__'){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;ry.appendChild(o)}});
+  const oCash=document.createElement('option');oCash.value='cash';oCash.textContent='Cash';ry.appendChild(oCash);
+  const oOther=document.createElement('option');oOther.value='__other__';oOther.textContent='Other';ry.appendChild(oOther);
+  if([...rc.options].some(o=>o.value===curCat))rc.value=curCat;
+  if([...rp.options].some(o=>o.value===curPur))rp.value=curPur;
+  if([...ry.options].some(o=>o.value===curPay))ry.value=curPay;
+}
+
+function getDueClass(dueStr){
+  if(!dueStr)return'due-none';
+  const d=new Date(dueStr+'T00:00:00'),now=new Date();now.setHours(0,0,0,0);
+  const diff=(d-now)/(86400000);
+  if(diff<0)return'due-overdue';if(diff<=7)return'due-soon';return'due-future';
+}
+function formatDue(dueStr){
+  if(!dueStr)return'<span class="due-none">—</span>';
+  const d=new Date(dueStr+'T00:00:00');
+  const cls=getDueClass(dueStr);
+  const label=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const prefix=cls==='due-overdue'?'⚠ ':'';
+  return'<span class="'+cls+'">'+prefix+label+'</span>';
+}
+
+function getFilteredExpenses(){
+  const f=_reportFilter;
+  return eData.expenses.filter(e=>{
+    if(f.cat!=='all'&&e.category!==f.cat)return false;
+    if(f.pur!=='all'&&e.purchaser!==f.pur)return false;
+    if(f.pay!=='all'){
+      if(f.pay==='__other__'){if(PAY_METHODS.some(p=>p.id===e.payMethod&&p.id!=='cash'))return false}
+      else if(e.payMethod!==f.pay)return false;
+    }
+    if(f.cur!=='all'&&e.currency!==f.cur)return false;
+    if(f.due!=='all'){
+      if(f.due==='overdue'&&getDueClass(e.dueDate)!=='due-overdue')return false;
+      if(f.due==='soon'&&getDueClass(e.dueDate)!=='due-soon')return false;
+      if(f.due==='nodue'&&e.dueDate)return false;
+      if(f.due==='hasdue'&&!e.dueDate)return false;
+    }
+    if(f.search){
+      const q=f.search.toLowerCase();
+      const hay=[e.category,e.desc||'',e.purchaser||'',e.payName||'',e.currency,String(e.amount),e.dueDate||'',e.date].join(' ').toLowerCase();
+      if(!hay.includes(q))return false;
+    }
+    return true;
+  });
+}
+
+function applyReport(){
+  _reportFilter={
+    cat:document.getElementById('rfCat').value,
+    pur:document.getElementById('rfPur').value,
+    pay:document.getElementById('rfPay').value,
+    cur:document.getElementById('rfCur').value,
+    due:document.getElementById('rfDue').value,
+    search:document.getElementById('rfSearch').value.trim()
+  };
+  renderExpenses();
+}
+function clearReport(){
+  _reportFilter={cat:'all',pur:'all',pay:'all',cur:'all',due:'all',search:''};
+  document.getElementById('rfCat').value='all';document.getElementById('rfPur').value='all';
+  document.getElementById('rfPay').value='all';document.getElementById('rfCur').value='all';
+  document.getElementById('rfDue').value='all';document.getElementById('rfSearch').value='';
+  renderExpenses();
+}
+
 // ===================== EXPENSE EDITING =====================
 let _editingExpId=null;
 function editExp(id){
@@ -1283,6 +1405,7 @@ function editExp(id){
   document.getElementById('eCur').value=e.currency;
   document.getElementById('eAmt').value=e.amount;
   document.getElementById('eDesc').value=e.desc||'';
+  document.getElementById('eDue').value=e.dueDate||'';
   // UI: switch to edit mode
   document.getElementById('expAddBtn').textContent='Save Edit';
   document.getElementById('expCancelBtn').classList.add('show');
@@ -1296,7 +1419,7 @@ function cancelEdit(){
   document.getElementById('ePay').value='';document.getElementById('payOtherWrap').classList.remove('show');
   document.getElementById('eCat').value=allCats()[0]||'';document.getElementById('customCatWrap').classList.remove('show');
   document.getElementById('eCur').value='USD';
-  document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';
+  document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';
   document.getElementById('expAddBtn').textContent='+ Add';
   document.getElementById('expCancelBtn').classList.remove('show');
   document.getElementById('expEditBadge').classList.remove('show');
