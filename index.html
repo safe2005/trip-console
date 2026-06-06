@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Egypt + Umrah 2026 — Trip Operations Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1014;--bg2:#10141a;--surface:#151a22;--surface2:#1b212b;--border:#262e3a;--border2:#323c4a;--text:#e7eaee;--muted:#8b94a3;--faint:#5d6573;--accent:#d8a44a;--accent2:#ecc879;--critical:#e5544b;--soon:#e0a13a;--ok:#54b27a;--decision:#5fa0db;--crit-bg:rgba(229,84,75,.10);--soon-bg:rgba(224,161,58,.10);--ok-bg:rgba(84,178,122,.12);--dec-bg:rgba(95,160,219,.10)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(1200px 600px at 80% -10%,rgba(216,164,74,.06),transparent 60%),radial-gradient(900px 500px at 0% 0%,rgba(95,160,219,.05),transparent 55%),var(--bg);color:var(--text);font-family:'Hanken Grotesk',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:80px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(13,16,20,.97),rgba(13,16,20,.86));backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.hbar{max-width:960px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{flex:1;min-width:200px}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+.htitle{font-family:'Fraunces',serif;font-weight:600;font-size:24px;letter-spacing:-.01em;line-height:1.05}
+.htitle em{font-style:italic;color:var(--accent2)}
+.countdown{text-align:center;padding:4px 0}
+.cd-num{font-family:'Fraunces',serif;font-size:32px;font-weight:600;line-height:1;color:var(--text)}
+.cd-lbl{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.ring-wrap{display:flex;align-items:center;gap:10px}
+.ring{position:relative;width:56px;height:56px}
+.ring svg{transform:rotate(-90deg)}
+.ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px}
+.ring-meta{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.ring-meta b{color:var(--text);font-size:12px}
+
+/* Main tabs */
+.main-tabs{max-width:960px;margin:0 auto;padding:10px 20px 0;display:flex;gap:4px}
+.mtab{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.05em;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-bottom:none;padding:9px 18px;border-radius:10px 10px 0 0;cursor:pointer;transition:.18s;text-transform:uppercase;white-space:nowrap}
+.mtab.on{background:var(--bg2);color:var(--accent);border-color:var(--border);font-weight:600}
+.mtab:not(.on):hover{color:var(--text)}
+.panel{display:none;padding-top:6px}.panel.active{display:block}
+
+/* Shared form/table/button styles */
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 10px}
+.form-row select,.form-row input{font-family:'JetBrains Mono',monospace;font-size:13px;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;transition:.18s}
+.form-row select:focus,.form-row input:focus{border-color:var(--accent)}
+.form-row select{min-width:170px;cursor:pointer}
+.form-row input[type=number]{width:115px}
+.form-row input[type=text]{flex:1;min-width:120px}
+.btn{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.05em;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;transition:.18s;text-transform:uppercase;font-weight:600}
+.btn-add{background:var(--accent);color:#1b1305}.btn-add:hover{background:var(--accent2)}
+.btn-clear{background:none;border:1px solid var(--border);color:var(--faint);margin-left:auto}.btn-clear:hover{border-color:var(--critical);color:var(--critical)}
+.tbl-wrap{max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;margin-top:12px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;text-align:left;position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:2}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:4px;transition:.15s}
+.del:hover{color:var(--critical);background:var(--crit-bg)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.empty{text-align:center;padding:30px;color:var(--faint);font-style:italic}
+.section-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:20px 0 6px;padding-top:8px;border-top:1px solid var(--border)}
+.section-sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+
+/* === ACTION TRACKER styles === */
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 0 6px}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px}
+.seg button{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--muted);background:none;border:none;padding:6px 13px;border-radius:6px;cursor:pointer;transition:.18s;text-transform:uppercase}
+.seg button.on{background:var(--accent);color:#1b1305;font-weight:600}
+.seg button:not(.on):hover{color:var(--text)}
+.spacer{flex:1}
+.btn-reset{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);background:none;border:1px solid var(--border);padding:7px 13px;border-radius:8px;cursor:pointer;transition:.18s;text-transform:uppercase;letter-spacing:.04em}
+.btn-reset:hover{color:var(--critical);border-color:var(--critical)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 2px 0;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%}
+.phase{margin-top:20px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,var(--surface),var(--bg2))}
+.phase-head{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;user-select:none;position:relative}
+.phase-head::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.phase.critical .phase-head::before{background:var(--critical)}
+.phase.soon .phase-head::before{background:var(--soon)}
+.phase.normal .phase-head::before{background:var(--accent)}
+.phase.during .phase-head::before{background:var(--decision)}
+.wave-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;padding:5px 9px;border-radius:6px;text-transform:uppercase;font-weight:600;white-space:nowrap}
+.phase.critical .wave-tag{background:var(--crit-bg);color:var(--critical)}
+.phase.soon .wave-tag{background:var(--soon-bg);color:var(--soon)}
+.phase.normal .wave-tag{background:rgba(216,164,74,.12);color:var(--accent2)}
+.phase.during .wave-tag{background:var(--dec-bg);color:var(--decision)}
+.phase-titles{flex:1;min-width:0}
+.phase-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.phase-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.phase-prog{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap}
+.chev{transition:transform .25s;color:var(--faint);font-size:13px}
+.phase.collapsed .chev{transform:rotate(-90deg)}
+.phase.collapsed .phase-body{display:none}
+.phase-body{padding:4px 14px 14px}
+.task{display:flex;gap:13px;padding:12px 10px;border-radius:11px;transition:background .15s;align-items:flex-start}
+.task:hover{background:rgba(255,255,255,.018)}
+.task+.task,.task+.gate,.gate+.task{border-top:1px solid var(--border)}
+.cbox{flex-shrink:0;width:22px;height:22px;border:1.8px solid var(--border2);border-radius:7px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.cbox:hover{border-color:var(--accent)}
+.cbox svg{width:13px;height:13px;opacity:0;transform:scale(.5);transition:.18s;stroke:#1b1305}
+.task.done .cbox{background:var(--ok);border-color:var(--ok)}
+.task.done .cbox svg{opacity:1;transform:scale(1);stroke:#08130c}
+.t-body{flex:1;min-width:0}
+.t-top{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.t-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);font-weight:600}
+.t-title{font-size:14.5px;font-weight:600;letter-spacing:-.005em}
+.task.done .t-title{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.t-note{font-size:12.5px;color:var(--muted);margin-top:4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 8px;border-radius:6px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);display:inline-flex;gap:5px;align-items:center}
+.chip.who{color:var(--accent2);border-color:rgba(216,164,74,.25)}
+.chip.due{color:var(--soon);border-color:rgba(224,161,58,.25)}
+.chip.due.crit{color:var(--critical);border-color:rgba(229,84,75,.3)}
+.chip.tel{color:var(--decision);border-color:rgba(95,160,219,.25)}
+.chip.val{color:var(--ok);border-color:rgba(84,178,122,.25)}
+.gate{margin:12px 4px;border:1px dashed var(--border2);border-radius:13px;padding:14px;background:var(--dec-bg)}
+.gate-head{display:flex;align-items:flex-start;gap:11px}
+.gate-ic{flex-shrink:0;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--decision);font-size:17px;margin-top:-1px}
+.gate-q{font-size:14px;font-weight:600;flex:1}
+.gate-tag{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--decision);text-transform:uppercase;margin-bottom:4px;display:block}
+.gate-opts{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.gate-opt{text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 12px;cursor:pointer;transition:.16s;color:var(--text);font-family:inherit;font-size:13px}
+.gate-opt:hover{border-color:var(--decision);background:var(--surface2)}
+.gate-opt .opt-if{font-weight:600;display:block;margin-bottom:3px}
+.gate-opt .opt-then{font-size:12px;color:var(--muted)}
+.gate-opt.chosen{border-color:var(--ok);background:var(--ok-bg)}
+.gate-opt.chosen .opt-if{color:var(--ok)}
+.gate-opt.chosen::after{content:"✓ selected";float:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ok);letter-spacing:.08em}
+
+/* === FINANCE styles === */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin:16px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;overflow:hidden}
+.card-name{font-size:13px;font-weight:600;margin-bottom:7px;display:flex;justify-content:space-between;align-items:baseline}
+.card-pct{font-family:'JetBrains Mono',monospace;font-size:12px}
+.prog-bg{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;margin:5px 0 4px}
+.prog-fg{height:100%;border-radius:5px;transition:width .35s ease}
+.card-stats{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.card-stats .amt{color:var(--text);font-weight:600}
+.chart-area{margin:16px 0}
+.chart-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.chart-label{width:125px;font-size:12px;font-weight:600;text-align:right;flex-shrink:0}
+.chart-bars{flex:1;position:relative;height:22px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.chart-fill{position:absolute;left:0;top:0;height:100%;border-radius:6px;transition:width .3s ease}
+.chart-nums{width:120px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);flex-shrink:0;text-align:right}
+.chart-nums b{color:var(--text)}
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin:10px 0 16px}
+.bud-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:9px}
+.bud-item label{flex:1;font-size:12px;font-weight:500}
+.bud-item input{font-family:'JetBrains Mono',monospace;font-size:12px;width:85px;text-align:right;padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none}
+.bud-item input:focus{border-color:var(--accent)}
+.rates-row{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 12px;align-items:center}
+.rate-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.rate-item input{font-family:'JetBrains Mono',monospace;width:68px;font-size:12px;padding:5px 7px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;text-align:right}
+.rate-item input:focus{border-color:var(--accent)}
+.summary{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+.sum-item{text-align:center;min-width:100px}
+.sum-val{font-family:'Fraunces',serif;font-size:24px;font-weight:600}
+.sum-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.sum-item.over .sum-val{color:var(--critical)}
+.sum-item.under .sum-val{color:var(--ok)}
+.filter-row{display:flex;gap:10px;align-items:center;margin:12px 0}
+.filter-row select{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer}
+
+footer{text-align:center;padding:30px 20px 0;color:var(--faint);font-size:12px}
+footer .save-state{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:4px}
+.hidden{display:none!important}
+@media(max-width:560px){.ring-wrap{order:3}.countdown{order:2}.htitle{font-size:20px}.phase-prog{display:none}.form-row{flex-direction:column}.form-row select,.form-row input[type=number],.form-row input[type=text]{width:100%;min-width:0}.chart-label{width:75px;font-size:10px}.budget-grid{grid-template-columns:1fr}}
+
+/* Points tracker */
+.points-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin:14px 0}
+.pt-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+.pt-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.pt-name{font-size:12.5px;font-weight:600}
+.pt-prog{font-family:'JetBrains Mono',monospace;font-size:11px}
+.pt-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}
+.pt-row label{color:var(--muted)}
+.pt-row input{font-family:'JetBrains Mono',monospace;width:100px;font-size:12px;text-align:right;padding:4px 7px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none}
+.pt-row input:focus{border-color:var(--accent)}
+.pt-bonus{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600}
+.pt-bonus.earned{color:var(--ok)}.pt-bonus.pending{color:var(--soon)}
+.pt-total{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.pt-total.hh{color:var(--accent2)}.pt-total.aa{color:var(--decision)}
+/* Reference tab */
+.ref-section{margin:16px 0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface)}
+.ref-head{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none;font-weight:600;font-size:14px}
+.ref-head:hover{background:var(--surface2)}
+.ref-head .ri{color:var(--accent);font-size:13px;transition:transform .2s}
+.ref-section.collapsed .ref-head .ri{transform:rotate(-90deg)}
+.ref-section.collapsed .ref-body{display:none}
+.ref-body{padding:4px 16px 14px;font-size:13px;color:var(--muted)}
+.ref-body table{width:100%;font-size:12.5px;margin:6px 0}
+.ref-body td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.ref-body td:first-child{font-weight:600;color:var(--text);white-space:nowrap;width:35%}
+.ref-body .phone{color:var(--decision);font-family:'JetBrains Mono',monospace;font-weight:600}
+
+
+
+
+.pay-other-wrap{display:none}.pay-other-wrap.show{display:flex}
+.pay-other-wrap input{min-width:120px;flex:1}
+.form-row2{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.form-row2 select,.form-row2 input{font-family:'JetBrains Mono',monospace;font-size:13px;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;transition:.18s}
+.form-row2 select:focus,.form-row2 input:focus{border-color:var(--accent)}
+.form-row2 select{min-width:160px;cursor:pointer}
+.custom-cat-wrap{display:none;margin-top:-4px}
+.custom-cat-wrap.show{display:flex}
+.custom-cat-wrap input{flex:1;min-width:140px}
+.bud-del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:13px;padding:0 4px;margin-left:4px;transition:.15s}
+.bud-del:hover{color:var(--critical)}
+
+
+/* Settings */
+.cfg-status{padding:12px 14px;border-radius:10px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:12px}
+.cfg-status.ok{background:var(--ok-bg);color:var(--ok);border:1px solid rgba(84,178,122,.3)}
+.cfg-status.warn{background:rgba(224,161,58,.1);color:var(--soon);border:1px solid rgba(224,161,58,.3)}
+.cfg-status.off{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.cfg-form{margin:16px 0}
+.cfg-field{margin-bottom:14px}
+.cfg-field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.cfg-field input{width:100%;font-family:'JetBrains Mono',monospace;font-size:13px;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none}
+.cfg-field input:focus{border-color:var(--accent)}
+.cfg-help{font-size:11px;color:var(--muted);margin-top:4px}
+.cfg-help code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:11px}
+.cfg-help a{text-decoration:underline}
+
+/* Itinerary */
+.itin-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.itin-bar .seg{flex-shrink:0}
+.itin-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.itin-actions .btn{font-size:11px;padding:7px 14px}
+.btn-print{background:var(--surface);border:1px solid var(--border);color:var(--text)}.btn-print:hover{border-color:var(--accent)}
+.btn-email{background:var(--decision);color:#fff}.btn-email:hover{opacity:.85}
+.btn-copy{background:var(--surface);border:1px solid var(--border);color:var(--muted)}.btn-copy:hover{border-color:var(--ok);color:var(--ok)}
+.sel-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);padding:6px 0}
+.day-card{display:flex;gap:12px;padding:14px 14px;margin:8px 0;border:1px solid var(--border);border-radius:13px;background:var(--surface);transition:.15s;align-items:flex-start;cursor:default}
+.day-card:hover{background:var(--surface2)}
+.day-card.selected{border-color:var(--accent);background:rgba(216,164,74,.06)}
+.day-cb{flex-shrink:0;width:20px;height:20px;border:1.8px solid var(--border2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:.18s}
+.day-cb:hover{border-color:var(--accent)}
+.day-cb svg{width:12px;height:12px;opacity:0;transition:.15s;stroke:#1b1305}
+.day-card.selected .day-cb{background:var(--accent);border-color:var(--accent)}
+.day-card.selected .day-cb svg{opacity:1}
+.day-main{flex:1;min-width:0}
+.day-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.day-date{font-family:'Fraunces',serif;font-weight:600;font-size:16px}
+.day-loc{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:5px;font-weight:600}
+.loc-transit{background:var(--dec-bg);color:var(--decision)}
+.loc-cairo{background:rgba(216,164,74,.15);color:var(--accent2)}
+.loc-sharm{background:rgba(43,181,160,.12);color:#2bb5a0}
+.loc-makkah{background:rgba(61,158,94,.12);color:#3d9e5e}
+.loc-madinah{background:rgba(93,186,124,.12);color:#5dba7c}
+.day-title{font-weight:600;font-size:14px;color:var(--text)}
+.day-items{font-size:13px;color:var(--muted);margin-top:4px}
+.day-items div{padding:2px 0}
+.day-items .flight{color:var(--decision)}.day-items .hotel{color:var(--accent2)}.day-items .alert{color:var(--critical);font-weight:600}
+
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="hbar">
+    <div class="brand">
+      <div class="kicker">Strategic Initiatives · Trip Operations</div>
+      <div class="htitle">Egypt + <em>Umrah</em> 2026</div>
+    </div>
+    <div class="countdown">
+      <div class="cd-num" id="cdNum">—</div>
+      <div class="cd-lbl">days to departure · Jun 21</div>
+    </div>
+    <div class="ring-wrap">
+      <div class="ring">
+        <svg width="56" height="56"><circle cx="28" cy="28" r="23" fill="none" stroke="var(--border)" stroke-width="5.5"/><circle id="ringFg" cx="28" cy="28" r="23" fill="none" stroke="var(--accent)" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="144.5" stroke-dashoffset="144.5"/></svg>
+        <div class="ring-pct" id="ringPct">0%</div>
+      </div>
+      <div class="ring-meta"><b id="doneCount">0</b>/<span id="totCount">0</span><br>tasks</div>
+    </div>
+  </div>
+  <div class="main-tabs" id="mainTabs">
+    <div class="mtab on" data-tab="actions">Actions</div>
+    <div class="mtab" data-tab="benefits">Benefits Tracker</div>
+    <div class="mtab" data-tab="expenses">Expense Tracker</div>
+    <div class="mtab" data-tab="itinerary">Itinerary</div>
+    <div class="mtab" data-tab="reference">Reference</div>
+    <div class="mtab" data-tab="settings" style="margin-left:auto;border:1px solid var(--border)">⚙ Sync</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ===== PANEL 1: ACTIONS ===== -->
+<div class="panel active" id="panel-actions">
+  <div class="controls">
+    <div class="seg" id="filterSeg">
+      <button data-f="all" class="on">All</button>
+      <button data-f="open">Open only</button>
+      <button data-f="urgent">Urgent</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn-reset" id="resetBtn">Reset progress</button>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--critical)"></i>Do today</span>
+    <span><i class="dot" style="background:var(--soon)"></i>This week</span>
+    <span><i class="dot" style="background:var(--accent)"></i>Ongoing</span>
+    <span><i class="dot" style="background:var(--decision)"></i>Pre-trip / in-destination</span>
+    <span><i class="dot" style="background:var(--decision)">◆</i>Decision gate</span>
+  </div>
+  <div id="phases"></div>
+</div>
+
+<!-- ===== PANEL 2: BENEFITS TRACKER ===== -->
+<div class="panel" id="panel-benefits">
+  <div class="section-title" style="border:none;margin-top:12px">Card Spend vs Welcome-Bonus Targets</div>
+  <div class="section-sub">Track spending on each card toward the $6,000 (Aspire) / $7,000 (Citi) thresholds to capture ~770K in welcome-bonus points.</div>
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <div class="section-title">Points & Miles Balances</div>
+  <div class="section-sub">Enter current balances below. Bonus is auto-calculated from your card spend progress above. Projected = current + bonus.</div>
+  <div class="points-grid" id="pointsGrid"></div>
+
+  <div class="section-title">Add Card Spend</div>
+  <div class="form-row">
+    <select id="bCard"></select>
+    <input type="number" id="bAmt" placeholder="Amount ($)" min="0" step="0.01">
+    <input type="text" id="bDesc" placeholder="Description (optional)">
+    <button class="btn btn-add" onclick="addBenefitTx()">+ Add</button>
+    <button class="btn btn-clear" onclick="clearBenefits()">Reset</button>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Card</th><th>Amount</th><th>Description</th><th></th></tr></thead><tbody id="bTbody"></tbody></table></div>
+</div>
+
+<!-- ===== PANEL 3: EXPENSE TRACKER ===== -->
+<div class="panel" id="panel-expenses">
+  <div class="section-title" style="border:none;margin-top:12px">Trip Expense Tracker</div>
+  <div class="section-sub">Log expenses in USD, EGP, or SAR — auto-converts to USD for budget tracking.</div>
+  <div class="summary" id="expSummary"></div>
+  <div class="section-title">Exchange Rates (editable)</div>
+  <div class="rates-row">
+    <div class="rate-item"><span>1 USD =</span><input id="rateEGP" type="number" value="51" step="0.1" onchange="onRateChange()"><span>EGP</span></div>
+    <div class="rate-item"><span>1 USD =</span><input id="rateSAR" type="number" value="3.75" step="0.01" onchange="onRateChange()"><span>SAR</span></div>
+  </div>
+  <div class="section-title">Budget per Category (editable)</div>
+  <div class="budget-grid" id="budgetGrid"></div>
+  <div class="section-title">Spend vs Budget</div>
+  <div class="chart-area" id="chartArea"></div>
+  <div class="section-title">Add Expense</div>
+  <div class="form-row2">
+    <select id="ePurchaser"><option value="">Purchaser…</option></select>
+    <select id="ePay" onchange="onPayChange()"><option value="">Payment type…</option></select>
+    <div class="pay-other-wrap" id="payOtherWrap"><input type="text" id="ePayOther" placeholder="Payment description"></div>
+  </div>
+  <div class="form-row">
+    <select id="eCat" onchange="onCatChange()"></select>
+    <div class="custom-cat-wrap" id="customCatWrap"><input type="text" id="eCustomCat" placeholder="Enter custom category name"></div>
+    <select id="eCur"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
+    <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01">
+    <input type="text" id="eDesc" placeholder="Description (optional)">
+    <button class="btn btn-add" onclick="addExpense()">+ Add</button>
+    <button class="btn btn-clear" onclick="clearExpenses()">Reset</button>
+  </div>
+  <div class="filter-row"><span style="font-size:12px;color:var(--muted)">Filter:</span><select id="eFilter" onchange="renderExpenses()"><option value="all">All categories</option></select></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Purchaser</th><th>Payment</th><th>Category</th><th>Cur</th><th>Amount</th><th>USD</th><th>Description</th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
+</div>
+
+
+
+<!-- ===== PANEL: ITINERARY ===== -->
+<div class="panel" id="panel-itinerary">
+  <div class="section-title" style="border:none;margin-top:12px">Trip Itinerary — Jun 21 to Jul 12, 2026</div>
+  <div class="section-sub">Select days to print or email. Use the segment buttons for quick selection.</div>
+  <div class="itin-bar">
+    <div class="seg" id="locSeg">
+      <button data-loc="all" class="on">All</button>
+      <button data-loc="cairo">Cairo</button>
+      <button data-loc="sharm">Sharm</button>
+      <button data-loc="makkah">Makkah</button>
+      <button data-loc="madinah">Madinah</button>
+      <button data-loc="transit">Transit</button>
+    </div>
+    <div class="sel-count" id="selCount">0 selected</div>
+    <div class="itin-actions">
+      <button class="btn btn-copy" onclick="copyItin()">📋 Copy</button>
+      <button class="btn btn-print" onclick="printItin()">🖨 Print</button>
+      <button class="btn btn-email" onclick="emailItin()">✉ Email</button>
+    </div>
+  </div>
+  <div id="itinDays"></div>
+</div>
+
+<!-- ===== PANEL 4: REFERENCE ===== -->
+<div class="panel" id="panel-reference">
+  <div class="section-title" style="border:none;margin-top:12px">Quick Reference — from the canonical workbook</div>
+  <div class="section-sub">Collapsible sections covering the Excel tabs not shown in the interactive tools above.</div>
+
+  
+
+  <div class="ref-section" id="refPhones">
+    <div class="ref-head" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ri">▼</span> Priority Phone Numbers & Scripts</div>
+    <div class="ref-body"><table>
+      <tr><td>$100 Conrad credit + Aspire-rate booking</td><td class="phone">Hilton: 855-292-5757</td></tr>
+      <tr><td>Free night cert booking</td><td class="phone">Hilton Honors: 1-800-446-6677</td></tr>
+      <tr><td>Aspire card benefits (general)</td><td class="phone">Amex: 800-528-4800</td></tr>
+      <tr><td>AAdvantage miles / Loyalty Points</td><td class="phone">AA: 800-882-8880</td></tr>
+      <tr><td>Citi card (verified — 4× confirmed)</td><td class="phone">Citi: 1-888-766-2484</td></tr>
+      <tr><td>Le Méridien Cairo Airport</td><td class="phone">+20 2 2696 5000</td></tr>
+    </table>
+    <div style="margin-top:10px;color:var(--text);font-weight:600">When calling Hilton 855-292-5757, ask:</div>
+    <div style="margin-top:4px">1. Does Conrad Jabal Omar Makkah participate in the Aspire $100 credit?</div>
+    <div>2. What is the Aspire Card Benefit rate for 4 nights (7/2–7/6)?</div>
+    <div>3. Can I apply a free night cert AND still get the $100 credit?</div>
+    </div>
+  </div>
+
+  <div class="ref-section" id="refReqs">
+    <div class="ref-head" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ri">▼</span> Requirements — Vaccines, Visas, Documents</div>
+    <div class="ref-body"><table>
+      <tr><td style="color:var(--critical)">🔴 MANDATORY</td><td><b>Meningococcal ACWY</b> — ≥10 days before JED arrival (7/2) = by 6/22. Checked at boarding + entry.</td></tr>
+      <tr><td style="color:var(--soon)">🟠 RECOMMENDED</td><td><b>Hep A</b> (by ~6/7), <b>Typhoid</b> (by ~6/14), <b>Polio IPV booster</b> (CDC rec for pilgrims), <b>MMR</b> (verify), <b>Flu</b>, routine Tdap/HepB/Varicella</td></tr>
+      <tr><td>❌ Not needed</td><td>Yellow Fever (not from endemic area), Cholera, Rabies, COVID (not currently mandatory)</td></tr>
+      <tr><td>Saudi e-Visa</td><td>visa.visitsaudi.com · $167/pax · 1-yr multi-entry · Covers Umrah</td></tr>
+      <tr><td>Egypt Visa</td><td>On-arrival at CAI · $25 cash/pax</td></tr>
+      <tr><td>Apps</td><td><b>Nusuk</b> (mandatory for Umrah permits + Rawdah booking)</td></tr>
+      <tr><td>Documents</td><td>ICVP/yellow card (vaccine record), passports (6+ mo validity), printed hotel confirmations</td></tr>
+    </table></div>
+  </div>
+
+  <div class="ref-section" id="ref1A1B">
+    <div class="ref-head" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ri">▼</span> Benefit Strategy 1A / 1B</div>
+    <div class="ref-body">
+    <div style="color:var(--text);font-weight:600;margin-bottom:6px">1A — reduce out-of-pocket CASH (priority):</div>
+    <table>
+      <tr><td>Resort Credit ×4</td><td>$1,600 (DoubleTree; folio split 6/30)</td></tr>
+      <tr><td>Diamond breakfast</td><td>~$4,160 (8 pax × 13 Hilton nights)</td></tr>
+      <tr><td>Executive Lounge</td><td>~$1,800 (Conrad + Madinah)</td></tr>
+      <tr><td>Free night certs</td><td>$650 (3 Conrad + 1 DoubleTree)</td></tr>
+      <tr><td>AA miles → Le Méridien</td><td>~$320–680 (AAdvantage Hotels)</td></tr>
+      <tr><td>Flight credits ×4</td><td>$800 ($200/card)</td></tr>
+      <tr><td>Free checked bags</td><td>Included in intl fare</td></tr>
+      <tr><td>Admirals Club</td><td>~$200 (food/drinks at CLT)</td></tr>
+      <tr><td style="font-weight:700;color:var(--ok)">TOTAL 1A</td><td style="font-weight:700;color:var(--ok)">~$9,730+</td></tr>
+    </table>
+    <div style="color:var(--text);font-weight:600;margin:10px 0 6px">1B — on-trip upgrades (if cash savings not possible):</div>
+    <div>Diamond room upgrades (all 3 Hiltons) · AA miles Business upgrade (remaining ~110K after Le Méridien) · Premium seats via flight credit</div>
+    <div style="margin-top:10px;padding:8px 10px;background:rgba(216,164,74,.1);border-radius:8px;color:var(--accent2);font-weight:600;font-size:12px">RULE: Never bank. 1A (cash) before 1B (upgrades). Don't overspend to hit a threshold.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== PANEL: SETTINGS ===== -->
+<div class="panel" id="panel-settings">
+  <div class="section-title" style="border:none;margin-top:12px">Cloud Sync — GitHub</div>
+  <div class="section-sub">Connect to a private GitHub Gist for cross-device, cross-browser persistence. Your data syncs from any phone, tablet, or computer.</div>
+  <div class="cfg-status" id="cfgStatus"></div>
+  <div class="cfg-form">
+    <div class="cfg-field">
+      <label>GitHub Personal Access Token <span style="color:var(--muted);font-weight:normal">(gist scope)</span></label>
+      <input type="password" id="cfgPat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <div class="cfg-help">Create at <a href="https://github.com/settings/tokens/new?scopes=gist&description=Trip+Console" target="_blank" style="color:var(--accent)">github.com/settings/tokens</a> → select only <code>gist</code> scope → Generate</div>
+    </div>
+    <div class="cfg-field">
+      <label>Gist ID <span style="color:var(--muted);font-weight:normal">(leave blank to auto-create)</span></label>
+      <input type="text" id="cfgGist" placeholder="Auto-created on first connect">
+      <div class="cfg-help">If connecting a second device, paste the Gist ID shown after your first connect</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn btn-add" onclick="connectGist()">Connect to GitHub</button>
+      <button class="btn btn-clear" onclick="disconnectGist()">Disconnect (local only)</button>
+    </div>
+  </div>
+  <div class="section-title">How It Works</div>
+  <div class="ref-body" style="padding:0">
+    <table>
+      <tr><td>Cloud mode (GitHub)</td><td>Data saved to a private Gist — accessible from any device/browser. Enter the same PAT + Gist ID on each device.</td></tr>
+      <tr><td>File mode (server.py)</td><td>Data saved to trip_data.json locally. Run start.bat on your computer. Cross-browser on that machine.</td></tr>
+      <tr><td>Browser mode</td><td>Data in localStorage — per-browser only. Works offline, but doesn't sync across devices.</td></tr>
+      <tr><td>Priority</td><td>Cloud → File → Browser. The console tries each in order and uses the first that works.</td></tr>
+    </table>
+  </div>
+  <div class="section-title">Setup for Mobile Access (One Time)</div>
+  <div class="ref-body" style="padding:0">
+    <table>
+      <tr><td>1. Host the HTML</td><td>Push Egypt_Umrah_Trip_Console.html to a GitHub repo → enable GitHub Pages → get your URL (username.github.io/repo)</td></tr>
+      <tr><td>2. Create a PAT</td><td>github.com/settings/tokens → New token (classic) → check only <code>gist</code> → Generate → copy it</td></tr>
+      <tr><td>3. Connect</td><td>Open the console on any device → Sync tab → paste PAT → Connect. A Gist is created automatically.</td></tr>
+      <tr><td>4. Second device</td><td>Open the same URL → Sync tab → paste same PAT + the Gist ID from step 3 → Connect</td></tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- .wrap -->
+
+<footer>
+  One console — actions, card-spend targets, and trip expenses. Cloud sync via GitHub · Local via server.py · Browser fallback. Open the ⚙ Sync tab to configure.
+  <div class="save-state" id="saveState">storage: initializing…</div>
+</footer>
+
+<script>
+
+// ===================== STORAGE ABSTRACTION (3-tier: GitHub > server > browser) =====================
+let _sMode='init',_gistCache={};
+function _ts(){return new Date().toLocaleTimeString()}
+function getCfg(){return{pat:localStorage.getItem('tc_pat')||'',gist:localStorage.getItem('tc_gist')||''}}
+
+async function _tryGistLoad(){
+  const c=getCfg();if(!c.pat||!c.gist)return null;
+  try{
+    const r=await fetch('https://api.github.com/gists/'+c.gist,{headers:{'Authorization':'token '+c.pat,'Accept':'application/vnd.github.v3+json'}});
+    if(!r.ok)throw new Error('API '+r.status);
+    const g=await r.json();const ct=g.files?.['trip_data.json']?.content;
+    _gistCache=ct?JSON.parse(ct):{};_sMode='cloud';return _gistCache;
+  }catch(e){return null}
+}
+async function _gistSave(){
+  const c=getCfg();if(!c.pat||!c.gist)return false;
+  try{
+    const r=await fetch('https://api.github.com/gists/'+c.gist,{method:'PATCH',headers:{'Authorization':'token '+c.pat,'Content-Type':'application/json'},
+      body:JSON.stringify({files:{'trip_data.json':{content:JSON.stringify(_gistCache,null,2)}}})});
+    return r.ok;
+  }catch(e){return false}
+}
+
+async function sGet(key){
+  // Tier 1: GitHub cache
+  if(_sMode==='cloud'&&_gistCache[key]!==undefined){const v=typeof _gistCache[key]==='string'?_gistCache[key]:JSON.stringify(_gistCache[key]);return{value:v}}
+  // Tier 2: local server
+  try{const r=await fetch('/api/data');if(r.ok){const all=await r.json();_sMode='file';if(all[key]!==undefined)return{value:typeof all[key]==='string'?all[key]:JSON.stringify(all[key])};return null}}catch(e){}
+  // Tier 3: localStorage
+  try{const v=localStorage.getItem('tc_'+key);_sMode='browser';return v?{value:v}:null}catch(e){}
+  _sMode='memory';return null;
+}
+
+async function sSet(key,value){
+  const parsed=JSON.parse(value);
+  // Tier 1: GitHub
+  if(_sMode==='cloud'){_gistCache[key]=parsed;if(await _gistSave()){ss('synced to GitHub · '+_ts());return}}
+  // Tier 2: local server
+  try{let all={};try{const r=await fetch('/api/data');if(r.ok)all=await r.json()}catch(e){}
+    all[key]=parsed;const w=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(all)});
+    if(w.ok){_sMode='file';ss('saved to file · '+_ts());return}}catch(e){}
+  // Tier 3: localStorage
+  try{localStorage.setItem('tc_'+key,value);_sMode='browser';ss('saved to browser · '+_ts());return}catch(e){}
+  _sMode='memory';ss('in-memory only');
+}
+
+async function connectGist(){
+  const pat=document.getElementById('cfgPat').value.trim();
+  let gist=document.getElementById('cfgGist').value.trim();
+  if(!pat){alert('Enter a GitHub Personal Access Token');return}
+  // Verify token
+  try{
+    const t=await fetch('https://api.github.com/user',{headers:{'Authorization':'token '+pat}});
+    if(!t.ok){alert('Invalid token (HTTP '+t.status+'). Check it and try again.');return}
+  }catch(e){alert('Cannot reach GitHub. Check your internet connection.');return}
+  // Create gist if needed
+  if(!gist){
+    try{
+      const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':'token '+pat,'Content-Type':'application/json'},
+        body:JSON.stringify({description:'Egypt+Umrah 2026 Trip Console Data','public':false,files:{'trip_data.json':{content:'{}'}}})});
+      if(!r.ok){alert('Failed to create Gist (HTTP '+r.status+')');return}
+      const d=await r.json();gist=d.id;
+      document.getElementById('cfgGist').value=gist;
+    }catch(e){alert('Error creating Gist: '+e.message);return}
+  }
+  localStorage.setItem('tc_pat',pat);localStorage.setItem('tc_gist',gist);
+  // Try loading
+  const data=await _tryGistLoad();
+  if(data){
+    // If gist has data, load it
+    if(data[A_KEY])try{aState=typeof data[A_KEY]==='string'?JSON.parse(data[A_KEY]):data[A_KEY]}catch(e){}
+    if(data[B_KEY])try{bData=typeof data[B_KEY]==='string'?JSON.parse(data[B_KEY]):data[B_KEY]}catch(e){}
+    if(data[E_KEY])try{eData=typeof data[E_KEY]==='string'?JSON.parse(data[E_KEY]):data[E_KEY]}catch(e){}
+    if(data[P_KEY])try{pData=typeof data[P_KEY]==='string'?JSON.parse(data[P_KEY]):data[P_KEY]}catch(e){}
+    if(!aState.tasks)aState.tasks={};if(!aState.gates)aState.gates={};
+    if(!bData.txs)bData.txs=[];if(!eData.expenses)eData.expenses=[];
+    if(!eData.budgets)eData.budgets={...DEF_BUDGETS};if(!eData.rates)eData.rates={...DEF_RATES};
+    if(!eData.customCats)eData.customCats=[];if(!pData.balances)pData.balances={};
+  } else {
+    // Empty gist — push current local data up
+    _gistCache={[A_KEY]:aState,[B_KEY]:bData,[E_KEY]:eData,[P_KEY]:pData};
+    await _gistSave();
+  }
+  _sMode='cloud';
+  ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderPoints();renderBenefitTx();rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderItin();
+  updateCfgStatus();ss('synced to GitHub · '+_ts());
+}
+function disconnectGist(){localStorage.removeItem('tc_pat');localStorage.removeItem('tc_gist');_sMode='browser';_gistCache={};updateCfgStatus();ss('disconnected — browser storage only')}
+function updateCfgStatus(){
+  const el=document.getElementById('cfgStatus');const c=getCfg();
+  if(c.pat&&c.gist&&_sMode==='cloud'){el.className='cfg-status ok';el.innerHTML='✓ Connected to GitHub · Gist ID: <code>'+c.gist+'</code><br>Copy this Gist ID to connect from another device.'}
+  else if(c.pat){el.className='cfg-status warn';el.innerHTML='⚠ Token saved but not connected. Click Connect.'}
+  else{el.className='cfg-status off';el.innerHTML='Not connected — using local storage only. Enter a GitHub token to enable cross-device sync.'}
+}
+
+// ===================== SHARED CONFIG =====================
+const DEPART=new Date('2026-06-21T00:00:00');
+const A_KEY='egypt_umrah_action_tracker_v1', B_KEY='egypt_trip_benefits_v2', E_KEY='egypt_trip_expenses_v2';
+const CARDS=[
+  {id:'aspire1',name:'Amex Aspire — Adult 1',target:6000,color:'#d8a44a'},
+  {id:'aspire2',name:'Amex Aspire — Adult 2',target:6000,color:'#e0a13a'},
+  {id:'aspire3',name:'Amex Aspire — Adult 3',target:6000,color:'#ecc879'},
+  {id:'aspire4',name:'Amex Aspire — Adult 4',target:6000,color:'#54b27a'},
+  {id:'citi',name:'Citi AA Executive — Adult 1',target:7000,color:'#5fa0db'},
+];
+const CATEGORIES=['Flights (AA/BA)','Regional Flights','Hotels','Transport','Visas & Vaccines','Activities & Excursions','Food & Beverage','Insurance','Shopping & Misc'];
+
+
+const PURCHASERS=['Adult 1','Adult 2','Adult 3','Adult 4','Adult 5','Adult 6','Adult 7','Adult 8'];
+const PAY_METHODS=[
+  {id:'aspire1',name:'Amex Aspire — Adult 1',cardId:'aspire1'},
+  {id:'aspire2',name:'Amex Aspire — Adult 2',cardId:'aspire2'},
+  {id:'aspire3',name:'Amex Aspire — Adult 3',cardId:'aspire3'},
+  {id:'aspire4',name:'Amex Aspire — Adult 4',cardId:'aspire4'},
+  {id:'citi1',name:'Citi AA Exec — Adult 1 (primary)',cardId:'citi'},
+  {id:'citi2',name:'Citi AA Exec — Adult 2 (AU)',cardId:'citi'},
+  {id:'citi3',name:'Citi AA Exec — Adult 3 (AU)',cardId:'citi'},
+  {id:'citi4',name:'Citi AA Exec — Adult 4 (AU)',cardId:'citi'},
+  {id:'cash',name:'Cash',cardId:null},
+  {id:'__other_pay__',name:'+ Other (free text)',cardId:null},
+];
+function onPayChange(){document.getElementById('payOtherWrap').classList.toggle('show',document.getElementById('ePay').value==='__other_pay__')}
+
+function allCats(){return [...CATEGORIES,...(eData.customCats||[])]}
+function onCatChange(){document.getElementById('customCatWrap').classList.toggle('show',document.getElementById('eCat').value==='__other__')}
+function rebuildCatSelects(){
+  const es=document.getElementById('eCat'),ef=document.getElementById('eFilter');
+  const curE=es.value,curF=ef.value;
+  es.innerHTML='';ef.innerHTML='<option value="all">All categories</option>';
+  allCats().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;es.appendChild(o);ef.appendChild(o.cloneNode(true))});
+  const ot=document.createElement('option');ot.value='__other__';ot.textContent='＋ Other (custom)';es.appendChild(ot);
+  if([...es.options].some(o=>o.value===curE))es.value=curE;
+  if([...ef.options].some(o=>o.value===curF))ef.value=curF;
+}
+
+const DEF_BUDGETS={'Flights (AA/BA)':12800,'Regional Flights':4300,'Hotels':4900,'Transport':700,'Visas & Vaccines':2936,'Activities & Excursions':2000,'Food & Beverage':4600,'Insurance':400,'Shopping & Misc':2000};
+const DEF_RATES={EGP:51,SAR:3.75};
+
+// ===================== STATE =====================
+let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},customCats:[]};
+let filter='all', memOnly=false;
+function ss(t){document.getElementById('saveState').textContent='storage: '+t}
+
+// ===================== STORAGE =====================
+async function loadAll(){
+  await loadP();
+  try{
+    const a=await sGet(A_KEY); if(a&&a.value) aState=JSON.parse(a.value);
+    const b=await sGet(B_KEY); if(b&&b.value) bData=JSON.parse(b.value);
+    const e=await sGet(E_KEY); if(e&&e.value) eData=JSON.parse(e.value);
+    ss('saved to artifact storage');
+  }catch(e){memOnly=true;ss('in-memory only')}
+  if(!aState.tasks)aState.tasks={}; if(!aState.gates)aState.gates={};
+  if(!bData.txs)bData.txs=[]; if(!eData.expenses)eData.expenses=[];
+  if(!eData.budgets)eData.budgets={...DEF_BUDGETS}; if(!eData.rates)eData.rates={...DEF_RATES};
+  if(!eData.customCats)eData.customCats=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
+}
+async function saveA(){if(memOnly)return;try{await sSet(A_KEY,JSON.stringify(aState));ss('saved · '+new Date().toLocaleTimeString())}catch(e){memOnly=true;ss('in-memory')}}
+async function saveB(){if(memOnly)return;try{await sSet(B_KEY,JSON.stringify(bData));ss('saved · '+new Date().toLocaleTimeString())}catch(e){memOnly=true;ss('in-memory')}}
+async function saveE(){if(memOnly)return;try{await sSet(E_KEY,JSON.stringify(eData));ss('saved · '+new Date().toLocaleTimeString())}catch(e){memOnly=true;ss('in-memory')}}
+
+// ===================== TAB SWITCHING =====================
+document.getElementById('mainTabs').addEventListener('click',e=>{
+  if(!e.target.classList.contains('mtab'))return;
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('on')); e.target.classList.add('on');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+e.target.dataset.tab).classList.add('active');
+});
+
+// ===================== ACTION TRACKER =====================
+const PHASES=[
+{id:'w0',tag:'Wave 0',cls:'critical',title:'Do Today',sub:'Deadline-critical — start within 24–72 hours',items:[
+  {type:'task',id:'T1',title:'Book travel-clinic appointment for all 8 (Atrium / Wake Forest)',who:'Adult 1',due:'TODAY',crit:true,note:'Vaccines need lead time. Meningococcal ACWY is MANDATORY for Saudi entry and must be ≥10 days before JED arrival (7/2) → by ~6/22. Hep A / Polio ideally by 6/7, Typhoid by ~6/14.'},
+  {type:'task',id:'T2',title:'Apply 8 Saudi e-visas at visa.visitsaudi.com',who:'All 8',due:'NOW (was 6/1)',crit:true,tel:'$167/pax',note:'1-yr multi-entry, covers Umrah. Allow processing time. Egypt visa is on-arrival ($25 cash).'},
+  {type:'task',id:'T3',title:'Install Nusuk app, start Umrah permits, book Rawdah slots (7/7–7/10)',who:'All 8',due:'NOW',crit:true,note:'Mandatory for Umrah permits + Rawdah visits. Slots limited; grab 7/7–7/10 ASAP.'},
+]},
+{id:'w1',tag:'Wave 1',cls:'soon',title:'This Week — Lock Bookings & Key Decisions',sub:'Availability + the decisions that shape everything',items:[
+  {type:'gate',id:'GA',tag:'Decision Gate A',q:'Are all 8 international tickets Main Cabin (NOT Basic Economy)?',opts:[
+    {if:'Yes — Main Cabin or higher',then:'Good: 1 free checked bag included, changes have no fee (fare diff only), AA-miles upgrades possible (see Gate D).'},
+    {if:'No — some are Basic Economy',then:'Basic Economy can\'t be changed/upgraded. Consider rebooking to Main Cabin — verify fare difference first.'},
+    {if:'Not sure yet',then:'Check fare class on each AA/BA confirmation this week — gates the bag, change, and upgrade items.'},
+  ]},
+  {type:'task',id:'T4',title:'Verify Main Cabin fare class + free checked bag on all 8 tickets',who:'Adult 1',due:'This week',note:'Intl economy includes first checked bag — confirm. Resolves Gate A.'},
+  {type:'task',id:'T5',title:'Book New Cairo Villa (4BR, 6 nights, 6/22–6/28)',who:'Adult 1',due:'This week',tel:'~$1,800'},
+  {type:'task',id:'T6',title:'Book DoubleTree Sharm — 4 rooms, FLEXIBLE rate (6/28–7/2)',who:'Adults 1–4',due:'This week',tel:'$77/nt',note:'Flexible rate required for Resort Credit. Each room on its occupant\'s Aspire.'},
+  {type:'gate',id:'GB',tag:'Decision Gate B',q:'$100 Conrad property credit — call Hilton 855-292-5757 before booking',opts:[
+    {if:'Already booked on hilton.com (non-refundable)',then:'KEEP IT — forfeiting prepayment > $100. Just apply cert. Skip rebook.'},
+    {if:'Booked on hilton.com (refundable) & Aspire rate comparable & cert combines',then:'Rebook via Aspire Card Benefit rate → up to $291/card (cert + $100). Book new FIRST, then cancel old.'},
+    {if:'Not booked Conrad yet',then:'Book via HiltonHonorsAspireCard.com "Aspire Card Benefit rate" or 855-292-5757; confirm cert can apply.'},
+  ]},
+  {type:'task',id:'T7',title:'Book Conrad Makkah — 3 rooms (per Gate B)',who:'Adults 1–3',due:'This week',tel:'$191/nt'},
+  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms on POINTS; verify 5th Night Free',who:'Adults 1–4',due:'This week',tel:'~960K pts',note:'Needs points on hand. Don\'t put a cert here (breaks 5NF).'},
+  {type:'task',id:'T9',title:'Book Le Méridien Cairo Airport — 4 DAY-USE rooms (7/11)',who:'Adult 1',due:'This week',tel:'AAdvantage Hotels',val:'AA miles → ~$320–680',note:'Only need ~21:10–04:30; book DAY-USE. Le Méridien is MARRIOTT — no Hilton benefit. Redeem AA miles via AAdvantage Hotels ("Redeem Miles", ~1cpp). Verify ≥1cpp logged in. Doesn\'t tap Hilton points.'},
+  {type:'task',id:'T10',title:'Book regional flights: CAI→SSH, Saudia SV 326, flynas XY 576',who:'Adult 1',due:'This week',note:'On Aspires (7×). VERIFY flynas fare includes bags + 5L Zamzam.'},
+  {type:'task',id:'T11',title:'Book ground transport: van JED→Conrad, HSR Makkah→Madinah',who:'Adult 1',due:'This week',tel:'van ~$220'},
+  {type:'task',id:'T12',title:'Buy supplemental travel insurance (regional-flight gap)',who:'Adult 1',due:'This week',tel:'~$300–500',note:'Aspire trip insurance needs entire round-trip on card; regional one-ways aren\'t covered.'},
+]},
+{id:'w2',tag:'Wave 2',cls:'normal',title:'Ongoing — Start Now, Runs for Weeks',sub:'Spend, certs, and enrollments',items:[
+  {type:'task',id:'T13',title:'Front-load $6,000 spend on EACH of 4 Aspires (normal spend)',who:'Adults 1–4',due:'ASAP',val:'→ 700K pts',note:'Welcome points fund the Madinah stay (1A). Complete early. Use the Benefits Tracker tab →'},
+  {type:'task',id:'T14',title:'Monitor all 4 Aspire Honors accounts DAILY for cert posting',who:'Adults 1–4',due:'Daily',note:'Time-based, no spend req; post ~8–14 wks after 4/6 (≈ Jun 1–Jul 13).'},
+  {type:'gate',id:'GC',tag:'Decision Gate C',q:'Cert posting timing vs Conrad window (7/2)',opts:[
+    {if:'Posted by ~6/28',then:'Use as planned: Adults 1–3 at Conrad ($191/nt), Adult 4 at DoubleTree ($77). Book via 1-800-446-6677. $650 saved.'},
+    {if:'NOT posted by 6/15',then:'Call Amex 800-528-4800 + Hilton 1-800-446-6677 to expedite.'},
+    {if:'Posts after 7/2',then:'Misses Conrad. Fallback: DoubleTree if in window; don\'t put at Madinah (breaks 5NF).'},
+  ]},
+  {type:'task',id:'T15',title:'Check Conrad standard-room AWARD availability 7/2–7/6',who:'Adult 1',due:'This week',note:'Cert needs standard award space. Toggle "Use Points" on hilton.com.'},
+  {type:'task',id:'T16',title:'Book cert award nights via 1-800-446-6677 when posted',who:'Adults 1–4',due:'On posting',note:'Online won\'t apply certs. 3 Conrad + 1 DoubleTree.'},
+  {type:'task',id:'T17',title:'Enroll 4 people in CLEAR Plus (pay with each Aspire)',who:'Adults 1–4',due:'Before 6/21',val:'up to $209/ea',note:'Instant at CLT. US airports only.'},
+  {type:'task',id:'T18',title:'Pay a phone bill with Aspire (cell-phone protection)',who:'Adults 1–4',due:'Before trip',val:'~$800/claim'},
+  {type:'task',id:'T19',title:'Apply for Global Entry (Adult 1) — for FUTURE trips',who:'Adult 1',due:'Anytime',tel:'$120 Citi credit',note:'Won\'t clear before 6/21.'},
+  {type:'task',id:'T20',title:'Attend vaccine appointments + collect ICVP / yellow card',who:'All 8',due:'Per clinic',note:'Meningococcal (mandatory), Hep A, Typhoid, Polio, verify MMR.'},
+]},
+{id:'w3',tag:'Wave 3',cls:'normal',title:'Pre-Departure — Week Before 6/21',sub:'Final confirmations, upgrades, activities',items:[
+  {type:'task',id:'T21',title:'Apply each Aspire $200 flight credit to seats/bags/Wi-Fi',who:'Adults 1–4',due:'At seat selection',val:'$800 total'},
+  {type:'gate',id:'GD',tag:'Decision Gate D',q:'AA miles: 1A Le Méridien redemption FIRST — then upgrade AA 730/735?',opts:[
+    {if:'1A first — redeem for Le Méridien (T9)',then:'Use ~32–68K miles via AAdvantage Hotels to cut hotel cash (1A). ~110K remain.'},
+    {if:'Then 1B — Main Cabin + Business "C" space',then:'Upgrade remaining miles: ~25K + ~$350 copay/segment. Copay is cash out (1B).'},
+    {if:'Basic Economy / no space / skip copay',then:'No upgrade. Miles best spent on Le Méridien 1A redemption.'},
+  ]},
+  {type:'task',id:'T22',title:'Check AA 730/735 Business upgrade space + execute',who:'Adult 1',due:'~1 wk out',tel:'800-882-8880'},
+  {type:'task',id:'T23',title:'Check Loyalty-Point balance vs 40K Gold',who:'Adult 1',due:'Anytime',note:'Flying the trip may push past Gold.'},
+  {type:'task',id:'T24',title:'Save Amex Global Assist + insurance numbers to phones',who:'All',due:'Before trip'},
+  {type:'task',id:'T25',title:'Confirm ALL bookings (flights, hotels, transport, day-use)',who:'Adult 1',due:'~1 wk out'},
+  {type:'gate',id:'GE',tag:'Decision Gate E',q:'Cairo evening — Nile dinner cruise or Corniche evening?',opts:[
+    {if:'Dinner cruise — best food & show',then:'Book Nile Maxim, weeknight, early seating, non-smoking table. Note: belly dancing.'},
+    {if:'Corniche — quieter, no belly dance',then:'Private felucca + Nile-view dinner (Sequoia) + Cairo Tower. ~$70–90/pax.'},
+  ]},
+  {type:'task',id:'T26',title:'Book Cairo evening + Pyramids/GEM day (6/25) + guide',who:'Adult 1',due:'Pre-trip',note:'GEM timed entry pre-book. Royal Mummies at NMEC, not GEM.'},
+  {type:'task',id:'T27',title:'Pre-book Sharm excursions via DoubleTree concierge',who:'Adult 1',due:'Pre-trip',note:'Book via concierge to capture Resort Credit.'},
+]},
+{id:'w4',tag:'Wave 4',cls:'during',title:'During the Trip — In-Destination',sub:'Don\'t miss these on the ground',items:[
+  {type:'task',id:'T28',title:'Egypt visa-on-arrival — $25 cash/pax (CAI, 6/22)',who:'All 8',due:'6/22',tel:'$25 cash'},
+  {type:'task',id:'T29',title:'Request Diamond room upgrades at every Hilton check-in',who:'Adults 1–4',due:'At check-in',val:'1B upgrade',note:'Haram-view at Conrad/Madinah; sea/pool at DoubleTree.'},
+  {type:'task',id:'T30',title:'Charge $100+ on-property at Conrad (if $100-credit rate)',who:'Adults 1–3',due:'During Makkah',val:'$300'},
+  {type:'task',id:'T31',title:'MID-STAY FOLIO SPLIT at DoubleTree — evening 6/30',who:'Adults 1–4',due:'6/30',crit:true,val:'$800',note:'Settle folio 6/30 to capture $200 H1 + $200 H2 Resort Credit per card. Skipping forfeits $800.'},
+  {type:'task',id:'T32',title:'Repack Zamzam at Le Méridien into 23kg checked bags',who:'All',due:'7/11',note:'BA free-Zamzam is JED-origin only; from CAI must fit 23kg.'},
+]},
+];
+
+function allTasks(){return PHASES.flatMap(p=>p.items.filter(i=>i.type==='task'))}
+function isUrgent(p){return p.cls==='critical'||p.cls==='soon'}
+function refreshProgress(){
+  const tasks=allTasks(),done=tasks.filter(t=>aState.tasks[t.id]).length,tot=tasks.length,pct=tot?Math.round(done/tot*100):0;
+  document.getElementById('doneCount').textContent=done;document.getElementById('totCount').textContent=tot;document.getElementById('ringPct').textContent=pct+'%';
+  const C=144.5;document.getElementById('ringFg').style.strokeDashoffset=C-(C*pct/100);
+  PHASES.forEach(p=>{const pt=p.items.filter(i=>i.type==='task');const pd=pt.filter(t=>aState.tasks[t.id]).length;const el=document.querySelector(`#prog-${p.id}`);if(el)el.textContent=`${pd}/${pt.length}`});
+}
+function chip(cls,t){return `<span class="chip ${cls}">${t}</span>`}
+function taskHTML(t){
+  const done=aState.tasks[t.id]?'done':'';let chips='';
+  if(t.who)chips+=chip('who','◦ '+t.who);if(t.due)chips+=chip('due'+(t.crit?' crit':''),'⏱ '+t.due);if(t.tel)chips+=chip('tel','✆ '+t.tel);if(t.val)chips+=chip('val','✓ '+t.val);
+  return `<div class="task ${done}" data-tid="${t.id}" data-urgent="${t._u}"><div class="cbox" data-check="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg></div><div class="t-body"><div class="t-top"><span class="t-id">${t.id}</span><span class="t-title">${t.title}</span></div>${t.note?`<div class="t-note">${t.note}</div>`:''} ${chips?`<div class="chips">${chips}</div>`:''}</div></div>`;
+}
+function gateHTML(g){
+  const ch=aState.gates[g.id];
+  return `<div class="gate" data-urgent="${g._u}"><div class="gate-head"><div class="gate-ic">◆</div><div style="flex:1"><span class="gate-tag">${g.tag}</span><div class="gate-q">${g.q}</div></div></div><div class="gate-opts">${g.opts.map((o,i)=>`<button class="gate-opt ${ch===i?'chosen':''}" data-gate="${g.id}" data-opt="${i}"><span class="opt-if">${o.if}</span><span class="opt-then">→ ${o.then}</span></button>`).join('')}</div></div>`;
+}
+function renderActions(){
+  const root=document.getElementById('phases');root.innerHTML='';
+  PHASES.forEach(p=>{const u=isUrgent(p);p.items.forEach(i=>i._u=u?'1':'0');const body=p.items.map(i=>i.type==='task'?taskHTML(i):gateHTML(i)).join('');const pt=p.items.filter(i=>i.type==='task');const pd=pt.filter(t=>aState.tasks[t.id]).length;const d=document.createElement('div');d.className=`phase ${p.cls}`;d.id='ph-'+p.id;
+  d.innerHTML=`<div class="phase-head" data-toggle="${p.id}"><span class="wave-tag">${p.tag}</span><div class="phase-titles"><div class="phase-title">${p.title}</div><div class="phase-sub">${p.sub}</div></div><span class="phase-prog" id="prog-${p.id}">${pd}/${pt.length}</span><span class="chev">▼</span></div><div class="phase-body">${body}</div>`;root.appendChild(d)});
+  bindActions();applyFilter();refreshProgress();
+}
+function bindActions(){
+  document.querySelectorAll('[data-check]').forEach(el=>el.onclick=e=>{e.stopPropagation();const id=el.dataset.check;aState.tasks[id]=!aState.tasks[id];el.closest('.task').classList.toggle('done',aState.tasks[id]);refreshProgress();applyFilter();saveA()});
+  document.querySelectorAll('[data-gate]').forEach(el=>el.onclick=()=>{const g=el.dataset.gate,o=+el.dataset.opt;aState.gates[g]=aState.gates[g]===o?undefined:o;document.querySelectorAll(`[data-gate="${g}"]`).forEach(b=>b.classList.toggle('chosen',+b.dataset.opt===aState.gates[g]));saveA()});
+  document.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=()=>el.closest('.phase').classList.toggle('collapsed'));
+}
+function applyFilter(){
+  document.querySelectorAll('.task').forEach(t=>{const done=aState.tasks[t.dataset.tid],u=t.dataset.urgent==='1';let s=true;if(filter==='open')s=!done;if(filter==='urgent')s=u&&!done;t.classList.toggle('hidden',!s)});
+  document.querySelectorAll('.gate').forEach(g=>{g.classList.toggle('hidden',filter==='urgent'&&g.dataset.urgent!=='1')});
+  document.querySelectorAll('.phase').forEach(p=>{const v=[...p.querySelectorAll('.task,.gate')].some(x=>!x.classList.contains('hidden'));p.classList.toggle('hidden',!v)});
+}
+document.getElementById('filterSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;filter=e.target.dataset.f;document.querySelectorAll('#filterSeg button').forEach(b=>b.classList.toggle('on',b===e.target));applyFilter()});
+document.getElementById('resetBtn').addEventListener('click',async()=>{if(!confirm('Reset all action checkboxes and decisions?'))return;aState={tasks:{},gates:{}};await saveA();renderActions()});
+
+// ===================== BENEFITS TRACKER =====================
+function cardSpend(cid){const manual=bData.txs.filter(t=>t.card===cid).reduce((s,t)=>s+t.amount,0);const fromExp=(eData.expenses||[]).filter(e=>{const pm=PAY_METHODS.find(p=>p.id===e.payMethod);return pm&&pm.cardId===cid}).reduce((s,e)=>s+e.usdAmount,0);return manual+fromExp}
+function renderCards(){
+  const g=document.getElementById('cardsGrid');g.innerHTML='';
+  CARDS.forEach(c=>{const sp=cardSpend(c.id),pct=Math.min(100,Math.round(sp/c.target*100)),ov=sp>=c.target;
+  g.innerHTML+=`<div class="card"><div class="card-name"><span>${c.name}</span><span class="card-pct" style="color:${ov?'var(--ok)':c.color}">${pct}%${ov?' ✓':''}</span></div><div class="prog-bg"><div class="prog-fg" style="width:${pct}%;background:${ov?'var(--ok)':c.color}"></div></div><div class="card-stats"><span class="amt">$${sp.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})}</span><span>of $${c.target.toLocaleString()}</span></div></div>`});
+}
+function renderBenefitTx(){
+  const tb=document.getElementById('bTbody');
+  if(!bData.txs.length){tb.innerHTML='<tr><td colspan="5" class="empty">No transactions yet — add spend above</td></tr>';return}
+  tb.innerHTML=bData.txs.slice().reverse().map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'}</td><td><button class="del" onclick="delBTx('${t.id}')">×</button></td></tr>`}).join('');
+}
+function addBenefitTx(){const card=document.getElementById('bCard').value,amt=parseFloat(document.getElementById('bAmt').value),desc=document.getElementById('bDesc').value.trim();if(!card||!amt||amt<=0)return;bData.txs.push({id:Date.now().toString(36),card,amount:amt,desc,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});document.getElementById('bAmt').value='';document.getElementById('bDesc').value='';renderCards();renderPoints();renderBenefitTx();saveB()}
+function delBTx(id){bData.txs=bData.txs.filter(t=>t.id!==id);renderCards();renderPoints();renderBenefitTx();saveB()}
+function clearBenefits(){if(!confirm('Reset all benefit transactions?'))return;bData={txs:[]};renderCards();renderPoints();renderBenefitTx();saveB()}
+
+// ===================== EXPENSE TRACKER =====================
+function toUSD(a,c){return c==='USD'?a:a/(eData.rates[c]||1)}
+function catSpend(c){return eData.expenses.filter(e=>e.category===c).reduce((s,e)=>s+e.usdAmount,0)}
+function totalSpend(){return eData.expenses.reduce((s,e)=>s+e.usdAmount,0)}
+function totalBudget(){return Object.values(eData.budgets).reduce((s,v)=>s+v,0)}
+function renderSummary(){const sp=totalSpend(),bd=totalBudget(),rm=bd-sp,ov=rm<0;document.getElementById('expSummary').innerHTML=`<div class="sum-item"><div class="sum-val">$${Math.round(bd).toLocaleString()}</div><div class="sum-lbl">Total Budget</div></div><div class="sum-item"><div class="sum-val">$${Math.round(sp).toLocaleString()}</div><div class="sum-lbl">Total Spent</div></div><div class="sum-item ${ov?'over':'under'}"><div class="sum-val">${ov?'-':''}$${Math.abs(Math.round(rm)).toLocaleString()}</div><div class="sum-lbl">${ov?'Over Budget':'Remaining'}</div></div>`}
+function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{const isCustom=!CATEGORIES.includes(c);const del=isCustom?`<button class="bud-del" data-delcat="${c}">×</button>`:'';g.innerHTML+=`<div class="bud-item"><label>${c}${del}</label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delCustomCat(b.dataset.delcat))}
+
+function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in this category will keep their label but the budget line will be removed.'))return;
+  eData.customCats=(eData.customCats||[]).filter(c=>c!==cat);delete eData.budgets[cat];
+  rebuildCatSelects();
+  const pur=document.getElementById('ePurchaser');PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pur.appendChild(o)});
+  const pay=document.getElementById('ePay');PAY_METHODS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;pay.appendChild(o)});renderBudgetGrid();renderChart();renderSummary();saveE()}
+function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
+function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
+function renderExpenses(){const tb=document.getElementById('eTbody'),f=document.getElementById('eFilter').value;const l=eData.expenses.filter(e=>f==='all'||e.category===f).slice().reverse();if(!l.length){tb.innerHTML='<tr><td colspan="9" class="empty">No expenses yet — add one above</td></tr>';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${e.date}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('')}
+function addExpense(){let cat=document.getElementById('eCat').value;const cur=document.getElementById('eCur').value,amt=parseFloat(document.getElementById('eAmt').value),desc=document.getElementById('eDesc').value.trim();
+  const purchaser=document.getElementById('ePurchaser').value;
+  let payId=document.getElementById('ePay').value,payName='';
+  if(payId==='__other_pay__'){payName=document.getElementById('ePayOther').value.trim();if(!payName){alert('Enter a payment description');return}document.getElementById('ePayOther').value='';document.getElementById('payOtherWrap').classList.remove('show');document.getElementById('ePay').value=''}
+  else{const pm=PAY_METHODS.find(p=>p.id===payId);payName=pm?pm.name:payId}
+  if(cat==='__other__'){cat=document.getElementById('eCustomCat').value.trim();if(!cat){alert('Enter a category name');return}
+    if(!eData.customCats)eData.customCats=[];if(!eData.customCats.includes(cat)&&!CATEGORIES.includes(cat)){eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
+    document.getElementById('eCustomCat').value='';document.getElementById('eCat').value=cat;document.getElementById('customCatWrap').classList.remove('show')}
+  if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+function delExp(id){eData.expenses=eData.expenses.filter(e=>e.id!==id);renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES}};document.getElementById('rateEGP').value=DEF_RATES.EGP;document.getElementById('rateSAR').value=DEF_RATES.SAR;rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+
+
+// ===================== POINTS & MILES TRACKER =====================
+const POINT_ACCOUNTS=[
+  {id:'hh1',name:'Hilton Honors — Adult 1',prog:'HH',unit:'pts',src:'aspire1',bonus:175000,cls:'hh'},
+  {id:'hh2',name:'Hilton Honors — Adult 2',prog:'HH',unit:'pts',src:'aspire2',bonus:175000,cls:'hh'},
+  {id:'hh3',name:'Hilton Honors — Adult 3',prog:'HH',unit:'pts',src:'aspire3',bonus:175000,cls:'hh'},
+  {id:'hh4',name:'Hilton Honors — Adult 4',prog:'HH',unit:'pts',src:'aspire4',bonus:175000,cls:'hh'},
+  {id:'aa1',name:'AAdvantage — Adult 1 (primary)',prog:'AA',unit:'mi',src:'citi',bonus:70000,cls:'aa'},
+  {id:'aa2',name:'AAdvantage — Adult 2',prog:'AA',unit:'mi',src:null,bonus:0,cls:'aa'},
+  {id:'aa3',name:'AAdvantage — Adult 3',prog:'AA',unit:'mi',src:null,bonus:0,cls:'aa'},
+  {id:'aa4',name:'AAdvantage — Adult 4',prog:'AA',unit:'mi',src:null,bonus:0,cls:'aa'},
+  {id:'lp1',name:'AA Loyalty Points — Adult 1',prog:'LP',unit:'LP',src:null,bonus:0,cls:'aa'},
+];
+const P_KEY='egypt_trip_points_v1';
+let pData={balances:{}};
+async function loadP(){try{const r=await sGet(P_KEY);if(r&&r.value)pData=JSON.parse(r.value)}catch(e){}if(!pData.balances)pData.balances={}}
+async function saveP(){if(memOnly)return;try{await sSet(P_KEY,JSON.stringify(pData));ss('saved · '+new Date().toLocaleTimeString())}catch(e){}}
+
+function getBonusStatus(acct){
+  if(!acct.src||!acct.bonus) return {earned:false,amount:0,note:'—'};
+  const card=CARDS.find(c=>c.id===acct.src);
+  if(!card) return {earned:false,amount:acct.bonus,note:'pending'};
+  const spent=cardSpend(acct.src);
+  if(spent>=card.target) return {earned:true,amount:acct.bonus,note:'earned ✓'};
+  const rem=card.target-spent;
+  return {earned:false,amount:acct.bonus,note:`pending ($${Math.round(rem).toLocaleString()} to go)`};
+}
+
+function renderPoints(){
+  const g=document.getElementById('pointsGrid');g.innerHTML='';
+  POINT_ACCOUNTS.forEach(a=>{
+    const bal=pData.balances[a.id]||0;
+    const bs=getBonusStatus(a);
+    const proj=bal+(bs.earned?bs.amount:0);
+    g.innerHTML+=`<div class="pt-card">
+      <div class="pt-hdr"><span class="pt-name">${a.name}</span><span class="pt-prog">${a.unit}</span></div>
+      <div class="pt-row"><label>Current balance</label><input type="number" value="${bal}" data-pid="${a.id}" onchange="onPtChange(this)" min="0"></div>
+      ${a.bonus?`<div class="pt-row"><label>Welcome bonus (${a.bonus.toLocaleString()})</label><span class="pt-bonus ${bs.earned?'earned':'pending'}">${bs.note}</span></div>`:''}
+      <div class="pt-total ${a.cls}">${proj.toLocaleString()} <span style="font-size:12px;color:var(--muted)">${a.unit} projected</span></div>
+    </div>`;
+  });
+}
+function onPtChange(el){pData.balances[el.dataset.pid]=parseFloat(el.value)||0;renderPoints();saveP()}
+
+
+// ===================== ITINERARY =====================
+const ITIN=[
+{date:'Jun 21',day:'Sun',loc:'transit',title:'Departure',items:[
+  {t:'flight',v:'✈ AA 730 CLT→LHR (evening)'},
+  {t:'act',v:'Admirals Club at CLT (all 4 Citi cardholders + guests)'},
+  {t:'act',v:'CLEAR Plus security at CLT'},
+]},
+{date:'Jun 22',day:'Mon',loc:'cairo',title:'Arrive Cairo',items:[
+  {t:'flight',v:'✈ BA 396 LHR→CAI arr ~17:25 Terminal 2'},
+  {t:'hotel',v:'🏨 New Cairo Villa check-in (4BR, 6 nights)'},
+  {t:'act',v:'Egypt visa-on-arrival $25 cash/pax at T2'},
+]},
+{date:'Jun 23',day:'Tue',loc:'cairo',title:'Cairo — Explore',items:[
+  {t:'act',v:'Khan el-Khalili bazaar, Islamic Cairo, or Tahrir Egyptian Museum'},
+]},
+{date:'Jun 24',day:'Wed',loc:'cairo',title:'Cairo — Museums',items:[
+  {t:'act',v:'NMEC (Royal Mummies) · Islamic Art Museum · Coptic Museum'},
+]},
+{date:'Jun 25',day:'Thu',loc:'cairo',title:'Pyramids + GEM Day',items:[
+  {t:'act',v:'Pyramids of Giza (gates 7AM, morning)'},
+  {t:'act',v:'Grand Egyptian Museum (timed entry, afternoon)'},
+  {t:'act',v:'Private Egyptologist guide recommended for group of 8'},
+]},
+{date:'Jun 26',day:'Fri',loc:'cairo',title:'Cairo — Friday',items:[
+  {t:'act',v:'Friday Prayer'},
+  {t:'act',v:'Evening: Nile Maxim dinner cruise OR Corniche felucca evening (Gate E)'},
+]},
+{date:'Jun 27',day:'Sat',loc:'cairo',title:'Cairo — Last Day',items:[
+  {t:'act',v:'Cairo Tower · shopping · free day'},
+  {t:'act',v:'Pack for Sharm El Sheikh'},
+]},
+{date:'Jun 28',day:'Sun',loc:'sharm',title:'Transfer to Sharm',items:[
+  {t:'flight',v:'✈ CAI→SSH (~1hr, Air Cairo/EgyptAir)'},
+  {t:'hotel',v:'🏨 DoubleTree Sharm check-in (4 rooms, 4 nights)'},
+  {t:'act',v:'Aspire Resort Credit active — charge activities to room folio'},
+]},
+{date:'Jun 29',day:'Mon',loc:'sharm',title:'Sharm — Snorkeling',items:[
+  {t:'act',v:'Ras Mohammed National Park snorkel trip'},
+  {t:'act',v:'Book via DoubleTree concierge (captures Resort Credit)'},
+]},
+{date:'Jun 30',day:'Tue',loc:'sharm',title:'Sharm — ⚠️ FOLIO SPLIT',items:[
+  {t:'act',v:'Parasailing, Royal SeaScope semi-sub, or Tiran Strait snorkel'},
+  {t:'alert',v:'⚠️ CRITICAL: mid-stay folio split this evening — settle all 4 room folios to capture $200 H1 Resort Credit per card ($800 total at stake)'},
+]},
+{date:'Jul 1',day:'Wed',loc:'sharm',title:'Sharm — Desert/Sinai',items:[
+  {t:'act',v:'Bedouin BBQ + quad/desert safari'},
+  {t:'act',v:'OR Mount Sinai sunrise trip (overnight departure)'},
+]},
+{date:'Jul 2',day:'Thu',loc:'makkah',title:'Transfer to Makkah',items:[
+  {t:'flight',v:'✈ Saudia SV 326 SSH→JED dep ~16:27'},
+  {t:'act',v:'🚐 Private van JED→Conrad (~$220)'},
+  {t:'hotel',v:'🏨 Conrad Jabal Omar Makkah check-in (3 rooms, 4 nights)'},
+  {t:'act',v:'Begin Umrah'},
+]},
+{date:'Jul 3',day:'Fri',loc:'makkah',title:'Makkah — Friday',items:[
+  {t:'act',v:'Friday Prayer at Masjid al-Haram'},
+  {t:'act',v:'Continue Umrah rites'},
+]},
+{date:'Jul 4',day:'Sat',loc:'makkah',title:'Makkah — Worship',items:[
+  {t:'act',v:'Haram / worship / rest'},
+]},
+{date:'Jul 5',day:'Sun',loc:'makkah',title:'Makkah — Last Day',items:[
+  {t:'act',v:'Last full Makkah day · pack for Madinah'},
+]},
+{date:'Jul 6',day:'Mon',loc:'madinah',title:'Transfer to Madinah',items:[
+  {t:'act',v:'🚄 HSR Economy Makkah→Madinah (~$310 + ~$50 taxis)'},
+  {t:'hotel',v:'🏨 Madinah Hilton check-in (4 rooms, 5 nights, points)'},
+  {t:'act',v:"Prophet's Mosque evening visit"},
+]},
+{date:'Jul 7',day:'Tue',loc:'madinah',title:'Madinah — Rawdah',items:[
+  {t:'act',v:'Rawdah visit (pre-booked Nusuk slot)'},
+  {t:'act',v:"Prophet's Mosque"},
+]},
+{date:'Jul 8',day:'Wed',loc:'madinah',title:'Madinah — Sites',items:[
+  {t:'act',v:'Rawdah visit (pre-booked slot)'},
+  {t:'act',v:'Historical sites: Quba Mosque, Uhud, Qiblatain'},
+]},
+{date:'Jul 9',day:'Thu',loc:'madinah',title:'Madinah — Explore',items:[
+  {t:'act',v:'Rawdah visit (pre-booked slot)'},
+  {t:'act',v:'Date market / shopping'},
+]},
+{date:'Jul 10',day:'Fri',loc:'madinah',title:'Madinah — Last Day',items:[
+  {t:'act',v:"Friday Prayer at Prophet's Mosque"},
+  {t:'act',v:'Last Rawdah slot · final Madinah day'},
+]},
+{date:'Jul 11',day:'Sat',loc:'transit',title:'Return Begins',items:[
+  {t:'flight',v:'✈ flynas XY 576 MED→CAI arr 21:10 Terminal 1'},
+  {t:'hotel',v:'🏨 Le Méridien Cairo Airport (day-use, 4 rooms)'},
+  {t:'act',v:'Free 5L Zamzam per pax (flynas Madinah-origin policy)'},
+  {t:'alert',v:'Repack Zamzam into 23kg checked bags at Le Méridien'},
+]},
+{date:'Jul 12',day:'Sun',loc:'transit',title:'Home',items:[
+  {t:'flight',v:'✈ BA 399 CAI→LHR dep 07:25'},
+  {t:'flight',v:'✈ AA 735 LHR→CLT arr 20:45'},
+  {t:'act',v:'Check out Le Méridien ~04:30 · arrive Charlotte ~20:45'},
+]},
+];
+
+let itinSel=new Set();
+function renderItin(){
+  const d=document.getElementById('itinDays');d.innerHTML='';
+  ITIN.forEach((day,i)=>{
+    const sel=itinSel.has(i);
+    const items=day.items.map(it=>`<div class="${it.t}">${it.v}</div>`).join('');
+    d.innerHTML+=`<div class="day-card ${sel?'selected':''}" data-idx="${i}" data-loc="${day.loc}">
+      <div class="day-cb" onclick="toggleDay(${i})"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg></div>
+      <div class="day-main"><div class="day-top"><span class="day-date">${day.date} (${day.day})</span><span class="day-loc loc-${day.loc}">${day.loc}</span><span class="day-title">${day.title}</span></div><div class="day-items">${items}</div></div>
+    </div>`;
+  });
+  updSelCount();
+}
+function toggleDay(i){if(itinSel.has(i))itinSel.delete(i);else itinSel.add(i);const c=document.querySelector(`.day-card[data-idx="${i}"]`);if(c)c.classList.toggle('selected');updSelCount()}
+function selectByLoc(loc){
+  itinSel.clear();
+  if(loc==='all') ITIN.forEach((_,i)=>itinSel.add(i));
+  else ITIN.forEach((d,i)=>{if(d.loc===loc)itinSel.add(i)});
+  document.querySelectorAll('.day-card').forEach(c=>{c.classList.toggle('selected',itinSel.has(+c.dataset.idx))});
+  updSelCount();
+}
+function updSelCount(){document.getElementById('selCount').textContent=itinSel.size+' of '+ITIN.length+' selected'}
+document.getElementById('locSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;document.querySelectorAll('#locSeg button').forEach(b=>b.classList.remove('on'));e.target.classList.add('on');selectByLoc(e.target.dataset.loc)});
+
+function getSelText(){
+  const lines=['EGYPT + UMRAH 2026 — TRIP ITINERARY','8 adults from Charlotte, NC','═'.repeat(50),''];
+  ITIN.forEach((d,i)=>{if(!itinSel.has(i))return;
+    lines.push(`${d.date} (${d.day}) — ${d.title.toUpperCase()} [${d.loc}]`);
+    d.items.forEach(it=>lines.push('  '+it.v));lines.push('');
+  });
+  lines.push('Generated from Trip Operations Console');
+  return lines.join('\n');
+}
+function copyItin(){if(!itinSel.size){alert('Select at least one day first');return}
+  navigator.clipboard.writeText(getSelText()).then(()=>{const b=document.querySelector('.btn-copy');b.textContent='✓ Copied!';setTimeout(()=>b.textContent='📋 Copy',1500)}).catch(()=>alert('Copy failed — try the email option'))}
+function emailItin(){if(!itinSel.size){alert('Select at least one day first');return}
+  const subj=encodeURIComponent('Egypt + Umrah 2026 Itinerary');
+  const body=encodeURIComponent(getSelText());
+  window.open('mailto:?subject='+subj+'&body='+body,'_blank')}
+function printItin(){if(!itinSel.size){alert('Select at least one day first');return}
+  const w=window.open('','_blank','width=800,height=900');
+  let h='<html><head><title>Trip Itinerary</title><style>body{font-family:Georgia,serif;max-width:700px;margin:30px auto;color:#1a1a1a}h1{font-size:22px;margin-bottom:2px}h2{font-size:12px;color:#666;font-weight:normal;margin-bottom:20px}.day{margin:16px 0;padding:12px 16px;border:1px solid #ddd;border-radius:8px;page-break-inside:avoid}.day-h{font-size:15px;font-weight:bold;margin-bottom:4px}.loc{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-left:8px}.item{font-size:13px;color:#444;padding:2px 0}.alert{color:#c0392b;font-weight:bold}footer{text-align:center;font-size:11px;color:#999;margin-top:30px;padding-top:12px;border-top:1px solid #eee}</style></head><body>';
+  h+='<h1>Egypt + Umrah 2026 — Trip Itinerary</h1><h2>8 adults from Charlotte, NC · Jun 21 – Jul 12, 2026</h2>';
+  ITIN.forEach((d,i)=>{if(!itinSel.has(i))return;
+    h+=`<div class="day"><div class="day-h">${d.date} (${d.day}) — ${d.title}<span class="loc">${d.loc}</span></div>`;
+    d.items.forEach(it=>{h+=`<div class="item ${it.t}">${it.v}</div>`});h+='</div>'});
+  h+='<footer>Generated from Trip Operations Console</footer></body></html>';
+  w.document.write(h);w.document.close();setTimeout(()=>w.print(),300)}
+
+// ===================== COUNTDOWN =====================
+function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));document.getElementById('cdNum').textContent=d}
+
+// ===================== INIT =====================
+(async function(){
+  // Try GitHub first
+  const cfg=getCfg();
+  if(cfg.pat&&cfg.gist){const gd=await _tryGistLoad();if(gd){_gistCache=gd}}
+  await loadAll();
+  // populate selects
+  const bs=document.getElementById('bCard');CARDS.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bs.appendChild(o)});
+  rebuildCatSelects();
+  const pur=document.getElementById('ePurchaser');PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pur.appendChild(o)});
+  const pay=document.getElementById('ePay');PAY_METHODS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;pay.appendChild(o)});
+  document.getElementById('rateEGP').value=eData.rates.EGP;document.getElementById('rateSAR').value=eData.rates.SAR;
+  ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
+  tick();setInterval(tick,3600000);
+  ss(_sMode==='cloud'?'synced to GitHub':_sMode==='file'?'file storage (trip_data.json)':_sMode==='browser'?'browser storage (localStorage)':'in-memory only');
+  updateCfgStatus();
+  // Pre-fill settings
+  const _c=getCfg();if(_c.pat)document.getElementById('cfgPat').value=_c.pat;if(_c.gist)document.getElementById('cfgGist').value=_c.gist;
+})();
+</script>
+</body>
+</html>
