@@ -670,7 +670,7 @@ function getCfg(){return{pat:localStorage.getItem('tc_pat')||'',gist:localStorag
 // GitHub API helper — direct call to api.github.com (cloud-only; no local proxy)
 async function _ghApi(method,url,headers,body){
   try{
-    const opts={method,headers:{...headers,'Cache-Control':'no-cache'}};
+    const opts={method,headers:{...headers}};  // do NOT add Cache-Control: it is not in GitHub's CORS allow-list, so it forces a preflight the browser rejects (status 0). The ?_=ts query param below busts cache instead.
     if(body)opts.body=typeof body==='string'?body:JSON.stringify(body);
     const r=await fetch(url+'?_='+Date.now(),opts);
     if(r.ok)return{ok:true,status:r.status,data:await r.json()};
