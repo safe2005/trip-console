@@ -443,6 +443,15 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .btn-exp:hover{border-color:var(--accent);color:var(--accent)}
 .exp-pick-cell{text-align:center;width:30px}
 .exp-pick,#expSelAll{cursor:pointer;width:15px;height:15px}
+/* ===== CALENDAR SHARE ===== */
+.cal-share-wrap{margin:0 0 10px}
+.cal-share-out{margin-top:9px;border:1px solid var(--border);border-radius:10px;padding:11px;background:var(--surface)}
+.share-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.share-row input{flex:1;min-width:180px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)}
+.share-link{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;text-decoration:none;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 13px}
+.share-link:hover{border-color:var(--accent);color:var(--accent)}
+.share-note{font-size:10.5px;color:var(--faint);line-height:1.45}
+.shared-banner{background:var(--ok-bg);border:1px solid var(--accent);color:var(--text);border-radius:10px;padding:9px 13px;margin:12px 0;font-size:12.5px;font-weight:500}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -716,6 +725,10 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <button class="cal-nav" onclick="calTripStart()">Trip start</button>
     <button class="cal-nav" onclick="calThisWeek()">This week</button>
     <span class="cal-hours">Hours <select id="calStartSel" onchange="setCalStart(this.value)"></select> – <select id="calEndSel" onchange="setCalEnd(this.value)"></select></span>
+  </div>
+  <div class="cal-share-wrap" id="calShareWrap">
+    <button class="btn-exp cal-share-btn" onclick="shareCalendar()">🔗 Share (read-only)</button>
+    <div class="cal-share-out" id="calShareOut" style="display:none"></div>
   </div>
   <div class="cal-scroll"><div class="cal-grid" id="calGrid"></div></div>
 </div>
@@ -2037,6 +2050,7 @@ function _locColor(loc){return ({cairo:'#5fa0db',sharm:'#3fb6a8',makkah:'#54b27a
 function _alpha(c){if(c&&c[0]==='#'){const n=parseInt(c.slice(1),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},.22)`}return 'rgba(120,140,170,.18)'}
 
 function calEvents(){
+  if(_shared&&_shared.ev){return _shared.ev.map(e=>({inst:destInstant(e.y,e.mo,e.d,e.h,e.mi,e.tz||DEST_TZ_DEFAULT),dur:e.dur||45,label:e.l,color:e.c,kind:e.k==='t'?'todo':'itin'}))}
   const evs=[];
   getItin().forEach(day=>{const pd=parseItinDate(day.date);if(!pd)return;
     day.items.forEach(it=>{if(!it.time)return;const p=it.time.split(':');const h=+p[0],mi=+p[1]||0;if(isNaN(h))return;
@@ -2085,10 +2099,10 @@ function renderCal(){
       const top=Math.max((e.sh-_calStart)*CAL_ROW_H,0);
       const hh=Math.min((e.eh-e.sh)*CAL_ROW_H,(hours*CAL_ROW_H)-top);
       const w=100/e.lanes,left=e.lane*w;
-      const col=e.cat?catColor(e.cat):(e.kind==='itin'?_locColor(e.loc):'#5fa0db');
-      const click=e.kind==='itin'?`editItinItem('${e.dayId}','${e.itemId}');switchToTab('itinerary')`:`switchToTab('todo')`;
+      const col=e.color?e.color:(e.cat?catColor(e.cat):(e.kind==='itin'?_locColor(e.loc):'#5fa0db'));
+      const click=_shared?'':(e.kind==='itin'?`editItinItem('${e.dayId}','${e.itemId}');switchToTab('itinerary')`:`switchToTab('todo')`);
       const icon=e.kind==='todo'?'☑ ':'';
-      html+=`<div class="cal-ev" onclick="${click}" style="top:${top}px;height:${Math.max(hh,18)}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px);background:${_alpha(col)};border-left:3px solid ${col}" title="${esc(e.label)} · ${_fmtTime(e.inst)}"><span class="cal-ev-t">${_fmtTime(e.inst)}</span> ${icon}${esc(e.label)}</div>`;
+      html+=`<div class="cal-ev" onclick="${click}" style="top:${top}px;height:${Math.max(hh,18)}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px);background:${_alpha(col)};border-left:3px solid ${col};cursor:${_shared?'default':'pointer'}" title="${esc(e.label)} · ${_fmtTime(e.inst)}"><span class="cal-ev-t">${_fmtTime(e.inst)}</span> ${icon}${esc(e.label)}</div>`;
     });
     html+='</div>';
   });
@@ -2151,12 +2165,42 @@ function exportExpenses(fmt){
   if(fmt==='xls')exportXLS(rows,EXP_COLUMNS,fn,'Expenses');else exportCSV(rows,EXP_COLUMNS,fn);
 }
 
+// ---- Calendar read-only share ----
+let _shared=null;
+function calSharePayload(){
+  const out=[];
+  getItin().forEach(day=>{const pd=parseItinDate(day.date);if(!pd)return;day.items.forEach(it=>{if(!it.time)return;const p=it.time.split(':');const h=+p[0],mi=+p[1]||0;if(isNaN(h))return;out.push({y:pd.y,mo:pd.mo,d:pd.d,h,mi,dur:it.dur||60,l:it.v,c:it.cat?catColor(it.cat):_locColor(day.loc),tz:day.tz||DEST_TZ_DEFAULT,k:'i'})})});
+  (tData.todos||[]).forEach(t=>{if(!t.time)return;const p=t.time.split(':');const h=+p[0],mi=+p[1]||0;if(isNaN(h))return;let pd=null,tz=DEST_TZ_DEFAULT;if(t.day!==''&&t.day!=null&&getItin()[t.day]){const dy=getItin()[t.day];pd=parseItinDate(dy.date);tz=dy.tz||DEST_TZ_DEFAULT}else if(t.date){const m=t.date.split('-');pd={y:+m[0],mo:+m[1]-1,d:+m[2]}}if(!pd)return;out.push({y:pd.y,mo:pd.mo,d:pd.d,h,mi,dur:t.dur||30,l:t.title,c:t.cat?catColor(t.cat):'#5fa0db',tz,k:'t'})});
+  return {v:1,gen:Date.now(),ev:out};
+}
+function calShareLink(){const json=JSON.stringify(calSharePayload());const b64=btoa(unescape(encodeURIComponent(json)));return location.origin+location.pathname+'#cal='+b64}
+async function shareCalendar(){
+  const url=calShareLink();
+  if(navigator.share){try{await navigator.share({title:'Egypt + Umrah Trip Calendar',text:'Our trip calendar (read-only)',url});return}catch(e){if(e&&e.name==='AbortError')return}}
+  const out=document.getElementById('calShareOut');if(!out)return;const enc=encodeURIComponent(url);
+  out.innerHTML=`<div class="share-row"><input type="text" id="calShareUrl" readonly value="${esc(url)}" onclick="this.select()"><button class="btn-exp" onclick="copyShareLink()">Copy link</button></div><div class="share-row"><a class="share-link" href="mailto:?subject=${encodeURIComponent('Our Egypt + Umrah Trip Calendar')}&body=${enc}">✉ Email</a><a class="share-link" href="sms:?&body=${enc}">💬 Message</a></div><div class="share-note">Read-only link — recipients can view but not edit. The calendar travels inside the link itself (no server), so it's long; iMessage and email handle it best.</div>`;
+  out.style.display='block';try{await navigator.clipboard.writeText(url)}catch(e){}
+}
+function copyShareLink(){const i=document.getElementById('calShareUrl');if(!i)return;i.select();try{navigator.clipboard.writeText(i.value)}catch(e){try{document.execCommand('copy')}catch(_){}}}
+function renderSharedCalendar(){
+  const mt=document.getElementById('mainTabs');if(mt)mt.style.display='none';
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const cp=document.getElementById('panel-calendar');if(cp)cp.classList.add('active');
+  const cm=document.getElementById('catMgrCal');if(cm&&cm.closest('.cat-mgr-wrap'))cm.closest('.cat-mgr-wrap').style.display='none';
+  const sw=document.getElementById('calShareWrap');if(sw)sw.style.display='none';
+  if(cp&&!document.getElementById('sharedBanner')){const b=document.createElement('div');b.id='sharedBanner';b.className='shared-banner';b.textContent='👁 Read-only shared calendar'+(_shared&&_shared.gen?(' · snapshot '+new Date(_shared.gen).toLocaleDateString()):'')+' — times shown in your local timezone';cp.insertBefore(b,cp.firstChild)}
+  calTripStart();
+}
+function detectSharedCalendar(){try{const h=location.hash||'';const i=h.indexOf('cal=');if(i>=0){_shared=JSON.parse(decodeURIComponent(escape(atob(h.slice(i+4)))))}}catch(e){_shared=null}return !!_shared}
+
 // ===================== INIT =====================
 (async function(){
   // Low Data Mode decision (before fonts load)
   let _ldPref=getLowDataPref();
   if(_ldPref===null)_ldPref=autoDetectLowData();
   applyLowData(_ldPref);
+  // Read-only shared calendar link? render it and stop (no app data needed)
+  if(detectSharedCalendar()){applyTheme(getThemePref());renderSharedCalendar();return}
   // Try GitHub first
   const cfg=getCfg();
   if(cfg.pat&&cfg.gist){
