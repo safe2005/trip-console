@@ -451,6 +451,9 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="eCur"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
     <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01">
     <input type="text" id="eDesc" placeholder="Description (optional)">
+    <label style="font-size:10px;color:var(--muted);align-self:center">Service date</label>
+    <input type="date" id="eSvc" title="Date of service — when the expense actually occurred">
+    <label style="font-size:10px;color:var(--muted);align-self:center">Due</label>
     <input type="date" id="eDue" title="Payment due date (optional)">
     <button class="btn btn-add" id="expAddBtn" onclick="addExpense()">+ Add</button>
     <button class="btn btn-cancel" id="expCancelBtn" onclick="cancelEdit()">Cancel</button>
@@ -475,7 +478,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
     <div class="report-summary" id="reportSummary"></div>
   </div>
-  <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Purchaser</th><th>Payment</th><th>Category</th><th>Cur</th><th>Amount</th><th>USD</th><th>Description</th><th>Due</th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
+  <div class="tbl-wrap"><table><thead><tr><th style="cursor:pointer;user-select:none" onclick="sortExp('svc','date')">Service Date <span class="sarr" id="sarr-svc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('purchaser','text')">Purchaser <span class="sarr" id="sarr-purchaser" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('payName','text')">Payment <span class="sarr" id="sarr-payName" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('category','text')">Category <span class="sarr" id="sarr-category" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('currency','text')">Cur <span class="sarr" id="sarr-currency" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('amount','num')">Amount <span class="sarr" id="sarr-amount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('usdAmount','num')">USD <span class="sarr" id="sarr-usdAmount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('desc','text')">Description <span class="sarr" id="sarr-desc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('dueDate','date')">Due <span class="sarr" id="sarr-dueDate" style="font-size:9px;opacity:.7"></span></th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
 </div>
 
 
@@ -988,11 +991,18 @@ function renderCards(){
   const g=document.getElementById('cardsGrid');g.innerHTML='';
   CARDS.forEach(c=>{const sp=cardSpend(c.id),pct=Math.min(100,Math.round(sp/c.target*100)),ov=sp>=c.target;
   g.innerHTML+=`<div class="card"><div class="card-name"><span>${c.name}</span><span class="card-pct" style="color:${ov?'var(--ok)':c.color}">${pct}%${ov?' ✓':''}</span></div><div class="prog-bg"><div class="prog-fg" style="width:${pct}%;background:${ov?'var(--ok)':c.color}"></div></div><div class="card-stats"><span class="amt">$${sp.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})}</span><span>of $${c.target.toLocaleString()}</span></div></div>`});
+  if(document.getElementById('bTbody'))renderBenefitTx();   // keep the contributing-transactions list in sync with card spend
 }
 function renderBenefitTx(){
   const tb=document.getElementById('bTbody');
-  if(!bData.txs.length){tb.innerHTML='<tr><td colspan="5" class="empty">No transactions yet — add spend above</td></tr>';return}
-  tb.innerHTML=bData.txs.slice().reverse().map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'}</td><td><button class="del" onclick="delBTx('${t.id}')">×</button></td></tr>`}).join('');
+  // Expense-derived contributions: every expense paid on a tracked card already counts in
+  // cardSpend(); surface them here as read-only rows so the source of each card's progress is
+  // visible. (cardSpend is unchanged, so this does NOT double-count.)
+  const fromExp=(eData.expenses||[]).filter(e=>{const pm=PAY_METHODS.find(p=>p.id===e.payMethod);return pm&&pm.cardId}).map(e=>{const pm=PAY_METHODS.find(p=>p.id===e.payMethod);return{date:_fmtSvcCell(e),card:pm.cardId,amount:e.usdAmount,desc:e.category+(e.desc?(' · '+e.desc):'')}});
+  if(!bData.txs.length&&!fromExp.length){tb.innerHTML='<tr><td colspan="5" class="empty">No card spend yet — add manual spend above, or log expenses paid on a card</td></tr>';return}
+  const manualRows=bData.txs.slice().reverse().map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'}</td><td><button class="del" onclick="delBTx('${t.id}')">×</button></td></tr>`});
+  const expRows=fromExp.map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr style="opacity:.85"><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'} <span style="font-size:10px;color:var(--muted)">· from Expenses</span></td><td style="font-size:10px;color:var(--muted)" title="Counts automatically from the Expenses tab — edit it there">auto</td></tr>`});
+  tb.innerHTML=manualRows.concat(expRows).join('');
 }
 function addBenefitTx(){const card=document.getElementById('bCard').value,amt=parseFloat(document.getElementById('bAmt').value),desc=document.getElementById('bDesc').value.trim();if(!card||!amt||amt<=0)return;bData.txs.push({id:Date.now().toString(36),card,amount:amt,desc,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});document.getElementById('bAmt').value='';document.getElementById('bDesc').value='';renderCards();renderPoints();renderBenefitTx();saveB()}
 function delBTx(id){bData.txs=bData.txs.filter(t=>t.id!==id);renderCards();renderPoints();renderBenefitTx();saveB()}
@@ -1014,8 +1024,28 @@ function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in t
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
 function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
-function renderExpenses(){const tb=document.getElementById('eTbody');const l=getFilteredExpenses().slice().reverse();if(!l.length){tb.innerHTML='<tr><td colspan="10" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${e.date}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');
-  // Report summary
+// --- Report sorting (typed: date / dollar / text) ---
+let _expSort={key:null,type:null,dir:1};   // dir 1=ascending, -1=descending
+function _svcOf(e){return e.svcDate||e.date||''}
+function _dateVal(s){
+  if(!s)return null;                                              // empty sorts last
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return Date.parse(s+'T00:00:00');  // ISO from the date picker
+  const t=Date.parse(s+' '+(new Date().getFullYear()));             // legacy "Jun 6" entry date
+  return isNaN(t)?null:t;
+}
+function _fmtSvcCell(e){const s=e.svcDate;if(s&&/^\d{4}-\d{2}-\d{2}/.test(s)){return new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}return e.svcDate||e.date||'—'}
+function _cmpExp(a,b){
+  const k=_expSort.key,t=_expSort.type,dir=_expSort.dir;let va,vb;
+  if(k==='svc'){va=_dateVal(_svcOf(a));vb=_dateVal(_svcOf(b))}
+  else if(t==='date'){va=_dateVal(a[k]);vb=_dateVal(b[k])}
+  else if(t==='num'){va=Number(a[k])||0;vb=Number(b[k])||0}
+  else{va=(a[k]||'').toString().toLowerCase();vb=(b[k]||'').toString().toLowerCase()}
+  if(t==='date'){if(va===null&&vb===null)return 0;if(va===null)return 1;if(vb===null)return -1}
+  if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
+}
+function sortExp(key,type){if(_expSort.key===key){_expSort.dir*=-1}else{_expSort={key,type,dir:1}}renderExpenses()}
+function _updateSortArrows(){document.querySelectorAll('.sarr').forEach(s=>s.textContent='');if(_expSort.key){const el=document.getElementById('sarr-'+_expSort.key);if(el)el.textContent=_expSort.dir>0?'▲':'▼'}}
+function renderExpenses(){const tb=document.getElementById('eTbody');let l=getFilteredExpenses().slice();if(_expSort.key){l.sort(_cmpExp)}else{l.reverse()}_updateSortArrows();if(!l.length){tb.innerHTML='<tr><td colspan="10" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${_fmtSvcCell(e)}</td><td>${e.purchaser||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');
   const total=l.reduce((s,e)=>s+e.usdAmount,0);
   const rs=document.getElementById('reportSummary');
   if(rs)rs.innerHTML='<div class="report-stat">Showing <b>'+l.length+'</b> of '+eData.expenses.length+' expenses</div><div class="report-stat">Total: <b>$'+Math.round(total).toLocaleString()+'</b> USD</div>'}
@@ -1027,13 +1057,13 @@ function addExpense(){let cat=document.getElementById('eCat').value;const cur=do
   if(cat==='__other__'){cat=document.getElementById('eCustomCat').value.trim();if(!cat){alert('Enter a category name');return}
     if(!eData.customCats)eData.customCats=[];if(!eData.customCats.includes(cat)&&!CATEGORIES.includes(cat)){eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
     document.getElementById('eCustomCat').value='';document.getElementById('eCat').value=cat;document.getElementById('customCatWrap').classList.remove('show')}
-  if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);if(_editingExpId){
+  if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);const svcDate=document.getElementById('eSvc').value||'';if(_editingExpId){
     const idx=eData.expenses.findIndex(x=>x.id===_editingExpId);
-    const dueDateE=document.getElementById('eDue').value||'';if(idx!==-1){eData.expenses[idx]={...eData.expenses[idx],category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDateE}}
+    const dueDateE=document.getElementById('eDue').value||'';if(idx!==-1){eData.expenses[idx]={...eData.expenses[idx],category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDateE,svcDate:svcDate}}
     _editingExpId=null;document.getElementById('expAddBtn').textContent='+ Add';document.getElementById('expCancelBtn').classList.remove('show');document.getElementById('expEditBadge').classList.remove('show');
   } else {
-    const dueDate=document.getElementById('eDue').value||'';eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDate,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
-  }document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';document.getElementById('eDue').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+    const dueDate=document.getElementById('eDue').value||'';eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDate,svcDate:svcDate,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
+  }document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';document.getElementById('eSvc').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function delExp(id){if(_editingExpId===id)cancelEdit();eData.expenses=eData.expenses.filter(e=>e.id!==id);renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES}};document.getElementById('rateEGP').value=DEF_RATES.EGP;document.getElementById('rateSAR').value=DEF_RATES.SAR;rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 
@@ -1396,7 +1426,7 @@ function getFilteredExpenses(){
     }
     if(f.search){
       const q=f.search.toLowerCase();
-      const hay=[e.category,e.desc||'',e.purchaser||'',e.payName||'',e.currency,String(e.amount),e.dueDate||'',e.date].join(' ').toLowerCase();
+      const hay=[e.category,e.desc||'',e.purchaser||'',e.payName||'',e.currency,String(e.amount),e.dueDate||'',e.svcDate||'',e.date].join(' ').toLowerCase();
       if(!hay.includes(q))return false;
     }
     return true;
@@ -1440,7 +1470,7 @@ function editExp(id){
   document.getElementById('eAmt').value=e.amount;
   document.getElementById('eDesc').value=e.desc||'';
   document.getElementById('eDue').value=e.dueDate||'';
-  // UI: switch to edit mode
+  document.getElementById('eSvc').value=e.svcDate||'';
   document.getElementById('expAddBtn').textContent='Save Edit';
   document.getElementById('expCancelBtn').classList.add('show');
   document.getElementById('expEditBadge').classList.add('show');
@@ -1453,7 +1483,7 @@ function cancelEdit(){
   document.getElementById('ePay').value='';document.getElementById('payOtherWrap').classList.remove('show');
   document.getElementById('eCat').value=allCats()[0]||'';document.getElementById('customCatWrap').classList.remove('show');
   document.getElementById('eCur').value='USD';
-  document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';
+  document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';document.getElementById('eSvc').value='';
   document.getElementById('expAddBtn').textContent='+ Add';
   document.getElementById('expCancelBtn').classList.remove('show');
   document.getElementById('expEditBadge').classList.remove('show');
