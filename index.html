@@ -1532,10 +1532,10 @@ function _parseCardCSV(text){
     format='Citi';
     const di=idx('debit'),dt=idx('date'),de=idx('description'),mn=idx('member name');
     data.forEach(r=>{const debit=_num(r[di]);if(debit>0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(debit*100)/100,catHint:'',member:String(r[mn]||'').trim()})}else skipped++});
-  } else if(idx('card member')!==-1&&idx('amount')!==-1){          // AMEX: positive Amount = charge
+  } else if(idx('amount')!==-1&&(idx('extended details')!==-1||idx('appears on your statement as')!==-1)){          // AMEX (any column layout): positive Amount = charge
     format='Amex';
     const ai=idx('amount'),dt=idx('date'),de=idx('description'),ca=idx('category'),cm=idx('card member');
-    data.forEach(r=>{const amt=_num(r[ai]);if(amt>0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(amt*100)/100,catHint:String(r[ca]||'').trim(),member:String(r[cm]||'').trim()})}else skipped++});
+    data.forEach(r=>{const amt=_num(r[ai]);if(amt>0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(amt*100)/100,catHint:ca!==-1?String(r[ca]||'').trim():'',member:cm!==-1?String(r[cm]||'').trim():''})}else skipped++});
   }
   return{format,charges,skipped,total:data.length};
 }
