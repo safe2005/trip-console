@@ -435,6 +435,14 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .cal-ev{position:absolute;border-radius:6px;padding:2px 5px;font-size:10.5px;line-height:1.25;color:var(--text);overflow:hidden;cursor:pointer;box-sizing:border-box}
 .cal-ev:hover{filter:brightness(1.18);z-index:5}
 .cal-ev-t{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:600;font-size:9.5px;opacity:.85}
+/* ===== ROW EXPORT ===== */
+.exp-export-bar{display:flex;align-items:center;gap:10px;margin:6px 0 8px;flex-wrap:wrap}
+.exp-sel-hint{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--faint);letter-spacing:.03em}
+.exp-sel-count{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);background:var(--surface2);padding:3px 9px;border-radius:6px;margin-right:auto}
+.btn-exp{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn-exp:hover{border-color:var(--accent);color:var(--accent)}
+.exp-pick-cell{text-align:center;width:30px}
+.exp-pick,#expSelAll{cursor:pointer;width:15px;height:15px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -578,7 +586,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
     <div class="report-summary" id="reportSummary"></div>
   </div>
-  <div class="tbl-wrap"><table><thead><tr><th style="cursor:pointer;user-select:none" onclick="sortExp('svc','date')">Service Date <span class="sarr" id="sarr-svc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('purchaser','text')">Purchaser <span class="sarr" id="sarr-purchaser" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('responsible','text')">Responsible <span class="sarr" id="sarr-responsible" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('payName','text')">Payment <span class="sarr" id="sarr-payName" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('category','text')">Category <span class="sarr" id="sarr-category" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('currency','text')">Cur <span class="sarr" id="sarr-currency" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('amount','num')">Amount <span class="sarr" id="sarr-amount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('usdAmount','num')">USD <span class="sarr" id="sarr-usdAmount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('desc','text')">Description <span class="sarr" id="sarr-desc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('dueDate','date')">Due <span class="sarr" id="sarr-dueDate" style="font-size:9px;opacity:.7"></span></th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="tbl-wrap"><table><thead><tr><th class="exp-pick-cell"><input type="checkbox" id="expSelAll" onchange="expToggleAll(this)" title="Select all rows"></th><th style="cursor:pointer;user-select:none" onclick="sortExp('svc','date')">Service Date <span class="sarr" id="sarr-svc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('purchaser','text')">Purchaser <span class="sarr" id="sarr-purchaser" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('responsible','text')">Responsible <span class="sarr" id="sarr-responsible" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('payName','text')">Payment <span class="sarr" id="sarr-payName" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('category','text')">Category <span class="sarr" id="sarr-category" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('currency','text')">Cur <span class="sarr" id="sarr-currency" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('amount','num')">Amount <span class="sarr" id="sarr-amount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('usdAmount','num')">USD <span class="sarr" id="sarr-usdAmount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('desc','text')">Description <span class="sarr" id="sarr-desc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('dueDate','date')">Due <span class="sarr" id="sarr-dueDate" style="font-size:9px;opacity:.7"></span></th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
   <div class="section-title">Import from Card CSV</div>
   <div class="report-box">
     <div class="report-row">
@@ -1283,7 +1292,7 @@ function _cmpExp(a,b){
 }
 function sortExp(key,type){if(_expSort.key===key){_expSort.dir*=-1}else{_expSort={key,type,dir:1}}renderExpenses()}
 function _updateSortArrows(){document.querySelectorAll('.sarr').forEach(s=>s.textContent='');if(_expSort.key){const el=document.getElementById('sarr-'+_expSort.key);if(el)el.textContent=_expSort.dir>0?'▲':'▼'}}
-function renderExpenses(){rebuildRespList();rebuildDescList();const tb=document.getElementById('eTbody');let l=getFilteredExpenses().slice();if(_expSort.key){l.sort(_cmpExp)}else{l.reverse()}_updateSortArrows();if(!l.length){tb.innerHTML='<tr><td colspan="11" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${_fmtSvcCell(e)}</td><td>${e.purchaser||'—'}</td><td>${e.responsible||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');
+function renderExpenses(){rebuildRespList();rebuildDescList();const tb=document.getElementById('eTbody');let l=getFilteredExpenses().slice();if(_expSort.key){l.sort(_cmpExp)}else{l.reverse()}_updateSortArrows();if(!l.length){tb.innerHTML='<tr><td colspan="12" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';updateExpSelCount();return}tb.innerHTML=l.map(e=>`<tr><td class="exp-pick-cell"><input type="checkbox" class="exp-pick" data-id="${e.id}" onchange="updateExpSelCount()"></td><td class="mono">${_fmtSvcCell(e)}</td><td>${e.purchaser||'—'}</td><td>${e.responsible||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');updateExpSelCount();
   const total=l.reduce((s,e)=>s+e.usdAmount,0);
   const rs=document.getElementById('reportSummary');
   if(rs)rs.innerHTML='<div class="report-stat">Showing <b>'+l.length+'</b> of '+eData.expenses.length+' expenses</div><div class="report-stat">Total: <b>$'+Math.round(total).toLocaleString()+'</b> USD</div>'}
@@ -2086,6 +2095,60 @@ function renderCal(){
   html+='</div>';
   if(!any)html+='<div class="empty-note" style="margin:12px">No timed items this week. Add a time to itinerary items or to-dos, or jump to <b>Trip start</b>.</div>';
   wrap.innerHTML=html;
+}
+
+// ===================== ROW SELECTION + EXPORT (CSV / Excel) =====================
+function _download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},120)}
+function _colVal(r,c){return (typeof c.key==='function')?c.key(r):r[c.key]}
+function _csvCell(v){if(v==null)v='';v=String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function exportCSV(rows,columns,filename){
+  const lines=[columns.map(c=>_csvCell(c.header)).join(',')];
+  rows.forEach(r=>{lines.push(columns.map(c=>{let v=_colVal(r,c);
+    if(c.type==='number'||c.type==='currency'){v=(v==null||v==='')?'':Number(v);return isNaN(v)?'':v}
+    return _csvCell(v==null?'':v)}).join(','))});
+  _download(filename+'.csv',new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'}));
+}
+function _x(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function exportXLS(rows,columns,filename,sheet){
+  const head='<Row>'+columns.map(c=>`<Cell ss:StyleID="sHead"><Data ss:Type="String">${_x(c.header)}</Data></Cell>`).join('')+'</Row>';
+  const body=rows.map(r=>'<Row>'+columns.map(c=>{let v=_colVal(r,c);
+    if(c.type==='number'){const n=(v==null||v==='')?null:Number(v);return (n==null||isNaN(n))?'<Cell><Data ss:Type="String"></Data></Cell>':`<Cell><Data ss:Type="Number">${n}</Data></Cell>`}
+    if(c.type==='currency'){const n=(v==null||v==='')?null:Number(v);return (n==null||isNaN(n))?'<Cell ss:StyleID="sCur"><Data ss:Type="String"></Data></Cell>':`<Cell ss:StyleID="sCur"><Data ss:Type="Number">${n}</Data></Cell>`}
+    if(c.type==='date'){if(v&&/^\d{4}-\d{2}-\d{2}$/.test(v))return `<Cell ss:StyleID="sDate"><Data ss:Type="DateTime">${v}T00:00:00.000</Data></Cell>`;return `<Cell><Data ss:Type="String">${_x(v||'')}</Data></Cell>`}
+    return `<Cell><Data ss:Type="String">${_x(v==null?'':v)}</Data></Cell>`;
+  }).join('')+'</Row>').join('');
+  const xml='<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n'
+    +'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n'
+    +'<Styles>'
+    +'<Style ss:ID="sHead"><Font ss:Bold="1"/><Interior ss:Color="#E9EDF2" ss:Pattern="Solid"/></Style>'
+    +'<Style ss:ID="sCur"><NumberFormat ss:Format="&quot;$&quot;#,##0.00"/></Style>'
+    +'<Style ss:ID="sDate"><NumberFormat ss:Format="mmm d&quot;, &quot;yyyy"/></Style>'
+    +'</Styles>'
+    +`<Worksheet ss:Name="${_x((sheet||'Export').slice(0,31))}"><Table>${head}${body}</Table></Worksheet>\n</Workbook>`;
+  _download(filename+'.xls',new Blob([xml],{type:'application/vnd.ms-excel'}));
+}
+
+// ---- Expenses selection + export ----
+const EXP_COLUMNS=[
+  {header:'Service Date',key:e=>e.svcDate||e.date||'',type:'date'},
+  {header:'Purchaser',key:'purchaser',type:'text'},
+  {header:'Responsible',key:'responsible',type:'text'},
+  {header:'Payment',key:'payName',type:'text'},
+  {header:'Category',key:'category',type:'text'},
+  {header:'Currency',key:'currency',type:'text'},
+  {header:'Amount',key:'amount',type:'number'},
+  {header:'USD Amount',key:'usdAmount',type:'currency'},
+  {header:'Description',key:'desc',type:'text'},
+  {header:'Due Date',key:'dueDate',type:'date'}
+];
+function expSelectedIds(){return [...document.querySelectorAll('#eTbody .exp-pick:checked')].map(c=>c.dataset.id)}
+function updateExpSelCount(){const n=expSelectedIds().length;const el=document.getElementById('expSelCount');if(el)el.textContent=n?(n+' selected'):'none selected';const all=document.querySelectorAll('#eTbody .exp-pick'),sa=document.getElementById('expSelAll');if(sa){sa.checked=all.length>0&&n===all.length;sa.indeterminate=n>0&&n<all.length}}
+function expToggleAll(cb){document.querySelectorAll('#eTbody .exp-pick').forEach(c=>{c.checked=cb.checked});updateExpSelCount()}
+function exportExpenses(fmt){
+  const ids=expSelectedIds();let rows=eData.expenses.filter(e=>ids.includes(e.id));
+  if(!rows.length){if(!confirm('No rows selected. Export ALL '+eData.expenses.length+' expense(s) shown instead?'))return;rows=getFilteredExpenses().slice()}
+  const fn='egypt-expenses-'+new Date().toISOString().slice(0,10);
+  if(fmt==='xls')exportXLS(rows,EXP_COLUMNS,fn,'Expenses');else exportCSV(rows,EXP_COLUMNS,fn);
 }
 
 // ===================== INIT =====================
