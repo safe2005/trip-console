@@ -442,7 +442,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
   <div class="section-title">Add Expense</div>
   <div class="form-row2">
     <select id="ePurchaser"><option value="">Purchaser…</option></select>
-    <input type="text" id="eResp" placeholder="Responsible (optional)" title="Who is responsible for this expense — free text">
+    <input type="text" id="eResp" list="respList" placeholder="Responsible (optional)" title="Who is responsible for this expense — free text; prior entries are suggested"><datalist id="respList"></datalist>
     <select id="ePay" onchange="onPayChange()"><option value="">Payment type…</option></select>
     <div class="pay-other-wrap" id="payOtherWrap"><input type="text" id="ePayOther" placeholder="Payment description"></div>
   </div>
@@ -451,7 +451,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <div class="custom-cat-wrap" id="customCatWrap"><input type="text" id="eCustomCat" placeholder="Enter custom category name"></div>
     <select id="eCur"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
     <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01">
-    <input type="text" id="eDesc" placeholder="Description (optional)">
+    <input type="text" id="eDesc" list="descList" placeholder="Description (optional)"><datalist id="descList"></datalist>
     <label style="font-size:10px;color:var(--muted);align-self:center">Service date</label>
     <input type="date" id="eSvc" title="Date of service — when the expense actually occurred">
     <label style="font-size:10px;color:var(--muted);align-self:center">Due</label>
@@ -777,7 +777,7 @@ async function connectGist(){
     if(!aState.tasks)aState.tasks={};if(!aState.gates)aState.gates={};
     if(!bData.txs)bData.txs=[];if(!eData.expenses)eData.expenses=[];
     if(!eData.budgets)eData.budgets={...DEF_BUDGETS};if(!eData.rates)eData.rates={...DEF_RATES};
-    if(!eData.customCats)eData.customCats=[];if(!pData.balances)pData.balances={};
+    if(!eData.customCats)eData.customCats=[];if(!eData.customPays)eData.customPays=[];if(!pData.balances)pData.balances={};
     if(_chg)await _gistSave();   // push reconciled offline edits up to the cloud
     _clearPending();
   } else {
@@ -831,6 +831,21 @@ const PAY_METHODS=[
   {id:'__other_pay__',name:'+ Other (free text)',cardId:null},
 ];
 function onPayChange(){document.getElementById('payOtherWrap').classList.toggle('show',document.getElementById('ePay').value==='__other_pay__')}
+// Custom payment methods (parallel to custom categories): "Other" free-text entries persist into the dropdown.
+function _slugPay(n){return 'cust_'+String(n).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')}
+function allPays(){return [...PAY_METHODS.filter(p=>p.id!=='__other_pay__'),...((eData.customPays||[]).map(n=>({id:_slugPay(n),name:n,cardId:null})))]}
+function rebuildPaySelect(){
+  const pay=document.getElementById('ePay');if(!pay)return;const cur=pay.value;
+  pay.innerHTML='<option value="">Payment type…</option>';
+  allPays().forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;pay.appendChild(o)});
+  const ot=document.createElement('option');ot.value='__other_pay__';ot.textContent='＋ Other (free text)';pay.appendChild(ot);
+  if([...pay.options].some(o=>o.value===cur))pay.value=cur;
+}
+// Free-text fields remember prior entries as autocomplete suggestions (derived from expense history).
+function _distinct(field,maxLen){const seen=new Set(),out=[];(eData.expenses||[]).forEach(e=>{const v=(e[field]||'').trim();if(v&&(!maxLen||v.length<=maxLen)&&!seen.has(v.toLowerCase())){seen.add(v.toLowerCase());out.push(v)}});return out.sort((a,b)=>a.localeCompare(b))}
+function _fillDatalist(id,vals){const dl=document.getElementById(id);if(!dl)return;dl.innerHTML=vals.map(v=>`<option value="${String(v).replace(/"/g,'&quot;')}"></option>`).join('')}
+function rebuildRespList(){_fillDatalist('respList',_distinct('responsible'))}
+function rebuildDescList(){_fillDatalist('descList',_distinct('desc',48))}
 
 function allCats(){return [...CATEGORIES,...(eData.customCats||[])]}
 function onCatChange(){document.getElementById('customCatWrap').classList.toggle('show',document.getElementById('eCat').value==='__other__')}
@@ -847,7 +862,7 @@ const DEF_BUDGETS={'Flights (AA/BA)':12800,'Regional Flights':4300,'Hotels':4900
 const DEF_RATES={EGP:51,SAR:3.75};
 
 // ===================== STATE =====================
-let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},customCats:[]};
+let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},customCats:[],customPays:[]};
 let filter='all', memOnly=false;
 function ss(t){document.getElementById('saveState').textContent='storage: '+t}
 
@@ -863,7 +878,7 @@ async function loadAll(){
   if(!aState.tasks)aState.tasks={}; if(!aState.gates)aState.gates={};
   if(!bData.txs)bData.txs=[]; if(!eData.expenses)eData.expenses=[];
   if(!eData.budgets)eData.budgets={...DEF_BUDGETS}; if(!eData.rates)eData.rates={...DEF_RATES};
-  if(!eData.customCats)eData.customCats=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
+  if(!eData.customCats)eData.customCats=[];if(!eData.customPays)eData.customPays=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
 }
 async function saveA(){try{await sSet(A_KEY,JSON.stringify(aState))}catch(e){}}
 async function saveB(){try{await sSet(B_KEY,JSON.stringify(bData))}catch(e){}}
@@ -1028,9 +1043,7 @@ function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.inne
 
 function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in this category will keep their label but the budget line will be removed.'))return;
   eData.customCats=(eData.customCats||[]).filter(c=>c!==cat);delete eData.budgets[cat];
-  rebuildCatSelects();
-  const pur=document.getElementById('ePurchaser');PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pur.appendChild(o)});
-  const pay=document.getElementById('ePay');PAY_METHODS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;pay.appendChild(o)});renderBudgetGrid();renderChart();renderSummary();saveE()}
+  rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();saveE()}
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
 function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
@@ -1055,15 +1068,17 @@ function _cmpExp(a,b){
 }
 function sortExp(key,type){if(_expSort.key===key){_expSort.dir*=-1}else{_expSort={key,type,dir:1}}renderExpenses()}
 function _updateSortArrows(){document.querySelectorAll('.sarr').forEach(s=>s.textContent='');if(_expSort.key){const el=document.getElementById('sarr-'+_expSort.key);if(el)el.textContent=_expSort.dir>0?'▲':'▼'}}
-function renderExpenses(){const tb=document.getElementById('eTbody');let l=getFilteredExpenses().slice();if(_expSort.key){l.sort(_cmpExp)}else{l.reverse()}_updateSortArrows();if(!l.length){tb.innerHTML='<tr><td colspan="11" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${_fmtSvcCell(e)}</td><td>${e.purchaser||'—'}</td><td>${e.responsible||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');
+function renderExpenses(){rebuildRespList();rebuildDescList();const tb=document.getElementById('eTbody');let l=getFilteredExpenses().slice();if(_expSort.key){l.sort(_cmpExp)}else{l.reverse()}_updateSortArrows();if(!l.length){tb.innerHTML='<tr><td colspan="11" class="empty">'+(eData.expenses.length?'No expenses match the current filter':'No expenses yet — add one above')+'</td></tr>';document.getElementById('reportSummary').innerHTML='';return}tb.innerHTML=l.map(e=>`<tr><td class="mono">${_fmtSvcCell(e)}</td><td>${e.purchaser||'—'}</td><td>${e.responsible||'—'}</td><td style="font-size:11px">${e.payName||'—'}</td><td>${e.category}</td><td class="mono">${e.currency}</td><td class="mono">${e.currency==='USD'?'$':''}${e.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td class="mono">$${e.usdAmount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${e.desc||'—'}</td><td class="mono">${formatDue(e.dueDate)}</td><td><button class="edit" onclick="editExp('${e.id}')">✎</button><button class="del" onclick="delExp('${e.id}')">×</button></td></tr>`).join('');
   const total=l.reduce((s,e)=>s+e.usdAmount,0);
   const rs=document.getElementById('reportSummary');
   if(rs)rs.innerHTML='<div class="report-stat">Showing <b>'+l.length+'</b> of '+eData.expenses.length+' expenses</div><div class="report-stat">Total: <b>$'+Math.round(total).toLocaleString()+'</b> USD</div>'}
 function addExpense(){let cat=document.getElementById('eCat').value;const cur=document.getElementById('eCur').value,amt=parseFloat(document.getElementById('eAmt').value),desc=document.getElementById('eDesc').value.trim();
   const purchaser=document.getElementById('ePurchaser').value;
   let payId=document.getElementById('ePay').value,payName='';
-  if(payId==='__other_pay__'){payName=document.getElementById('ePayOther').value.trim();if(!payName){alert('Enter a payment description');return}document.getElementById('ePayOther').value='';document.getElementById('payOtherWrap').classList.remove('show');document.getElementById('ePay').value=''}
-  else{const pm=PAY_METHODS.find(p=>p.id===payId);payName=pm?pm.name:payId}
+  if(payId==='__other_pay__'){const txt=document.getElementById('ePayOther').value.trim();if(!txt){alert('Enter a payment description');return}payName=txt;
+    if(!eData.customPays)eData.customPays=[];if(!eData.customPays.includes(txt)&&!PAY_METHODS.some(p=>p.name===txt)){eData.customPays.push(txt);rebuildPaySelect()}
+    payId=_slugPay(txt);document.getElementById('ePayOther').value='';document.getElementById('payOtherWrap').classList.remove('show');document.getElementById('ePay').value=''}
+  else{const pm=allPays().find(p=>p.id===payId);payName=pm?pm.name:payId}
   if(cat==='__other__'){cat=document.getElementById('eCustomCat').value.trim();if(!cat){alert('Enter a category name');return}
     if(!eData.customCats)eData.customCats=[];if(!eData.customCats.includes(cat)&&!CATEGORIES.includes(cat)){eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
     document.getElementById('eCustomCat').value='';document.getElementById('eCat').value=cat;document.getElementById('customCatWrap').classList.remove('show')}
@@ -1551,7 +1566,7 @@ function _renderImportStaging(){
   const s=document.getElementById('impStaging');const p=_importParsed;
   if(!p||!p.format){if(s){s.style.display='none';s.innerHTML=''}alert('Could not recognize this CSV. Expected an American Express or Citi statement export.');return}
   if(!p.charges.length){s.style.display='none';s.innerHTML='';alert(p.format+' file recognized, but it contained no charges to import ('+p.skipped+' payment/credit rows).');return}
-  const payOpts=PAY_METHODS.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  const payOpts=allPays().map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   const catOpts='<option value="__imported__">Imported (review)</option>'+allCats().map(c=>`<option value="${c}">${c}</option>`).join('');
   const purOpts='<option value="">— none —</option>'+PURCHASERS.map(x=>`<option value="${x}">${x}</option>`).join('');
   const rowsHtml=p.charges.map((c,i)=>`<tr><td style="text-align:center"><input type="checkbox" class="imp-row" data-idx="${i}" checked></td><td class="mono" style="font-size:11px">${c.date}</td><td style="font-size:11px">${(c.desc.length>50?c.desc.slice(0,50)+'…':c.desc).replace(/</g,'&lt;')}</td><td class="mono">$${c.amount.toLocaleString('en',{minimumFractionDigits:2})}</td></tr>`).join('');
@@ -1576,7 +1591,7 @@ function _renderImportStaging(){
 }
 function doImport(){
   const p=_importParsed;if(!p||!p.charges.length)return;
-  const payId=document.getElementById('impPay').value;const pm=PAY_METHODS.find(x=>x.id===payId);const payName=pm?pm.name:payId;
+  const payId=document.getElementById('impPay').value;const pm=allPays().find(x=>x.id===payId);const payName=pm?pm.name:payId;
   let cat=document.getElementById('impCat').value;if(cat==='__imported__')cat='Imported (review)';
   const resp=document.getElementById('impResp').value.trim();
   const purch=document.getElementById('impPurch').value;
@@ -1619,7 +1634,7 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   const bs=document.getElementById('bCard');CARDS.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bs.appendChild(o)});
   rebuildCatSelects();
   const pur=document.getElementById('ePurchaser');PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pur.appendChild(o)});
-  const pay=document.getElementById('ePay');PAY_METHODS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;pay.appendChild(o)});
+  const pay=document.getElementById('ePay');rebuildPaySelect();rebuildRespList();rebuildDescList();
   document.getElementById('rateEGP').value=eData.rates.EGP;document.getElementById('rateSAR').value=eData.rates.SAR;
   ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
