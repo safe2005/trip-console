@@ -348,6 +348,56 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 [data-theme="light"] .search-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.1)}
 .theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:16px;line-height:1;align-self:center;transition:.18s}
 .theme-btn:hover{border-color:var(--accent)}
+/* ===== TO-DO / NOTES / SHARED CATEGORIES ===== */
+.stat-pill{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--muted);font-weight:400;margin-left:8px;letter-spacing:.04em}
+.form-row2 textarea{font-family:'Hanken Grotesk',-apple-system,system-ui,sans-serif;font-size:13px;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;resize:vertical;min-height:42px}
+.form-row2 textarea:focus{border-color:var(--accent)}
+.fld{display:inline-flex;flex-direction:column;gap:3px}
+.fld-l{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-left:2px}
+.fld-chk{flex-direction:row;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer}
+.cat-mgr-wrap{margin:14px 0 4px;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface)}
+.cat-mgr-lbl{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.cat-mgr{display:flex;flex-wrap:wrap;gap:7px}
+.cat-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 6px 4px 5px;font-size:12px}
+.cat-chip input[type=color]{width:20px;height:20px;border:none;border-radius:5px;background:none;cursor:pointer;padding:0}
+.cat-chip-name{color:var(--text)}
+.cat-chip-x{background:none;border:none;color:var(--faint);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+.cat-chip-x:hover{color:var(--critical)}
+.cat-add input[type=text]{border:none;background:none;color:var(--text);outline:none;font-size:12px;width:110px;font-family:inherit}
+.cat-chip-add-btn{background:var(--accent);color:#1b1305;border:none;border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600}
+.todo-filters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.todo-filters select{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;outline:none}
+.todo-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.td-item{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 13px}
+.td-done{opacity:.55}
+.td-done .td-title{text-decoration:line-through}
+.td-check{flex-shrink:0;width:21px;height:21px;border:1.8px solid var(--border2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.td-check svg{width:13px;height:13px;stroke:var(--ok)}
+.td-done .td-check{background:var(--ok-bg);border-color:var(--ok)}
+.td-body{flex:1;min-width:0}
+.td-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.td-title{font-weight:600;font-size:14px;color:var(--text)}
+.td-prio{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.td-status{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 7px;border-radius:5px}
+.td-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.td-tag{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted);background:var(--surface2);padding:2px 7px;border-radius:5px;white-space:nowrap}
+.td-note{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45;white-space:pre-wrap}
+.td-actions{display:flex;gap:3px;flex-shrink:0}
+.td-actions button,.note-actions button{background:none;border:none;color:var(--faint);cursor:pointer;font-size:14px;padding:3px 5px;border-radius:6px}
+.td-actions button:hover,.note-actions button:hover{background:var(--surface2);color:var(--text)}
+.notes-list{display:flex;flex-wrap:wrap;gap:11px;margin-top:8px}
+.note-card{flex:1 1 280px;max-width:440px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.note-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.note-title{font-weight:600;font-size:14px;color:var(--text)}
+.note-actions{display:flex;gap:2px;flex-shrink:0}
+.note-body{font-size:13px;color:var(--muted);margin-top:7px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.note-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.empty-note{color:var(--faint);font-size:13px;padding:18px;text-align:center;border:1px dashed var(--border);border-radius:11px}
+.day-todos{margin-top:9px;padding-top:8px;border-top:1px dashed var(--border);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.day-todos-lbl{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.day-todo{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-left-width:3px;border-radius:6px;padding:2px 8px}
+.day-todo.done{opacity:.5;text-decoration:line-through}
+.dt-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -385,6 +435,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <div class="mtab" data-tab="benefits">Benefits Tracker</div>
     <div class="mtab" data-tab="expenses">Expense Tracker</div>
     <div class="mtab" data-tab="itinerary">Itinerary</div>
+    <div class="mtab" data-tab="todo">To-Do</div>
+    <div class="mtab" data-tab="notes">Notes</div>
     <div class="mtab" data-tab="reference">Reference</div>
     <div class="mtab" data-tab="settings" style="margin-left:auto;border:1px solid var(--border)">⚙ Sync</div>
   </div>
@@ -523,6 +575,70 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
   </div>
   <div id="itinDays"></div>
+</div>
+
+<!-- ===== PANEL: TO-DO ===== -->
+<div class="panel" id="panel-todo">
+  <div class="section-title" style="border:none;margin-top:12px">To-Do List <span class="stat-pill" id="todoStat"></span></div>
+  <div class="section-sub">Flexible trip tasks. Link any item to an itinerary day, an action, or a person — linked to-dos also surface on the Itinerary tab (and the Calendar, coming next). Categories &amp; colors are shared across To-Do, Notes, Itinerary, and Calendar; change one here and it updates everywhere.</div>
+
+  <div class="cat-mgr-wrap">
+    <div class="cat-mgr-lbl">🎨 Categories &amp; colors — shared across tabs</div>
+    <div class="cat-mgr" id="catMgr"></div>
+  </div>
+
+  <div class="section-title">Add To-Do</div>
+  <div class="form-row2">
+    <input type="text" id="tTitle" placeholder="What needs doing?" style="flex:2;min-width:200px">
+    <select id="tCat"></select>
+    <select id="tPrio"><option value="Low">Low</option><option value="Medium" selected>Medium</option><option value="High">High</option><option value="Urgent">Urgent</option></select>
+    <select id="tStatus"><option value="Not started" selected>Not started</option><option value="In progress">In progress</option><option value="Done">Done</option><option value="Blocked">Blocked</option></select>
+  </div>
+  <div class="form-row2">
+    <label class="fld"><span class="fld-l">Due date</span><input type="date" id="tDate"></label>
+    <label class="fld"><span class="fld-l">Time</span><input type="time" id="tTime"></label>
+    <label class="fld"><span class="fld-l">Duration min</span><input type="number" id="tDur" min="0" step="15" placeholder="60"></label>
+    <select id="tDay"></select>
+    <select id="tAction"></select>
+    <select id="tWho"></select>
+  </div>
+  <div class="form-row2">
+    <input type="text" id="tNote" placeholder="Notes (optional)" style="flex:3;min-width:200px">
+    <button class="btn-add" onclick="addTodo()">+ Add To-Do</button>
+    <button class="btn-clear" onclick="clearTodoForm()">Clear</button>
+  </div>
+
+  <div class="todo-filters">
+    <select id="tfStatus" onchange="setTodoFilter('status',this.value)"><option value="">All statuses</option><option value="Not started">Not started</option><option value="In progress">In progress</option><option value="Done">Done</option><option value="Blocked">Blocked</option></select>
+    <select id="tfCat" onchange="setTodoFilter('cat',this.value)"><option value="">All categories</option></select>
+    <select id="tfSort" onchange="setTodoFilter('sort',this.value)"><option value="due">Sort: due date</option><option value="prio">Sort: priority</option><option value="created">Sort: newest</option></select>
+  </div>
+  <div id="todoList" class="todo-list"></div>
+</div>
+
+<!-- ===== PANEL: NOTES ===== -->
+<div class="panel" id="panel-notes">
+  <div class="section-title" style="border:none;margin-top:12px">Notes <span class="stat-pill" id="notesStat"></span></div>
+  <div class="section-sub">Capture notes and attach each to a context — General, Expenses, Itinerary, To-Do, Calendar, Benefits, or Reference — so they live alongside the right part of the trip. Categories &amp; colors are shared with the other tabs.</div>
+
+  <div class="section-title">Add Note</div>
+  <div class="form-row2">
+    <input type="text" id="nTitle" placeholder="Note title" style="flex:2;min-width:180px">
+    <select id="nCtx"></select>
+    <select id="nCat"></select>
+    <label class="fld fld-chk"><input type="checkbox" id="nPin"> 📌 Pin</label>
+  </div>
+  <div class="form-row2">
+    <textarea id="nBody" placeholder="Write your note…" rows="3" style="flex:3;min-width:240px"></textarea>
+    <button class="btn-add" onclick="addNote()">+ Add Note</button>
+    <button class="btn-clear" onclick="clearNoteForm()">Clear</button>
+  </div>
+
+  <div class="todo-filters">
+    <select id="nfCtx" onchange="setNoteFilter('ctx',this.value)"><option value="">All contexts</option><option value="general">General</option><option value="expenses">Expenses</option><option value="itinerary">Itinerary</option><option value="todo">To-Do</option><option value="calendar">Calendar</option><option value="benefits">Benefits</option><option value="reference">Reference</option></select>
+    <select id="nfCat" onchange="setNoteFilter('cat',this.value)"><option value="">All categories</option></select>
+  </div>
+  <div id="notesList" class="notes-list"></div>
 </div>
 
 <!-- ===== PANEL 4: REFERENCE ===== -->
@@ -819,7 +935,7 @@ function updateCfgStatus(){
 
 // ===================== SHARED CONFIG =====================
 const DEPART=new Date('2026-06-21T00:00:00');
-const A_KEY='egypt_umrah_action_tracker_v1', B_KEY='egypt_trip_benefits_v2', E_KEY='egypt_trip_expenses_v2';
+const A_KEY='egypt_umrah_action_tracker_v1', B_KEY='egypt_trip_benefits_v2', E_KEY='egypt_trip_expenses_v2', T_KEY='egypt_trip_planner_v1';
 const CARDS=[
   {id:'aspire1',name:'Amex Aspire — Hossam',target:6000,color:'#d8a44a'},
   {id:'aspire2',name:'Amex Aspire — Shereen',target:6000,color:'#e0a13a'},
@@ -885,6 +1001,7 @@ const DEF_RATES={EGP:51,SAR:3.75};
 
 // ===================== STATE =====================
 let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},customCats:[],customPays:[]};
+let tData={todos:[],notes:[],cats:[]};
 let filter='all', memOnly=false;
 function ss(t){document.getElementById('saveState').textContent='storage: '+t}
 
@@ -895,10 +1012,12 @@ async function loadAll(){
     const a=await sGet(A_KEY); if(a&&a.value) aState=JSON.parse(a.value);
     const b=await sGet(B_KEY); if(b&&b.value) bData=JSON.parse(b.value);
     const e=await sGet(E_KEY); if(e&&e.value) eData=JSON.parse(e.value);
+    const t=await sGet(T_KEY); if(t&&t.value) tData=JSON.parse(t.value);
     ss('loaded');
   }catch(e){memOnly=true;ss('in-memory only')}
   if(!aState.tasks)aState.tasks={}; if(!aState.gates)aState.gates={};
   if(!bData.txs)bData.txs=[]; if(!eData.expenses)eData.expenses=[];
+  if(!tData.todos)tData.todos=[]; if(!tData.notes)tData.notes=[]; if(!tData.cats)tData.cats=[];
   if(!eData.budgets)eData.budgets={...DEF_BUDGETS}; if(!eData.rates)eData.rates={...DEF_RATES};
   if(!eData.customCats)eData.customCats=[];if(!eData.customPays)eData.customPays=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
 }
@@ -925,6 +1044,8 @@ function renderTab(tab){
   else if(tab==='benefits'){renderCards();renderPoints();renderBenefitTx()}
   else if(tab==='expenses'){renderBudgetGrid();renderChart();renderSummary();renderExpenses()}
   else if(tab==='itinerary')renderItin();
+  else if(tab==='todo')renderTodos();
+  else if(tab==='notes')renderNotes();
 }
 function renderAllTabs(){['actions','benefits','expenses','itinerary'].forEach(renderTab)}
 
@@ -1288,7 +1409,7 @@ function renderItin(){
     const items=day.items.map(it=>`<div class="${it.t}">${it.v}</div>`).join('');
     d.innerHTML+=`<div class="day-card ${sel?'selected':''}" data-idx="${i}" data-loc="${day.loc}">
       <div class="day-cb" onclick="toggleDay(${i})"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg></div>
-      <div class="day-main"><div class="day-top"><span class="day-date">${day.date} (${day.day})</span><span class="day-loc loc-${day.loc}">${day.loc}</span><span class="day-title">${day.title}</span></div><div class="day-items">${items}</div></div>
+      <div class="day-main"><div class="day-top"><span class="day-date">${day.date} (${day.day})</span><span class="day-loc loc-${day.loc}">${day.loc}</span><span class="day-title">${day.title}</span></div><div class="day-items">${items}</div>${dayTodoFooter(i)}</div>
     </div>`;
   });
   updSelCount();
@@ -1633,6 +1754,145 @@ function cancelImport(){_importParsed=null;const s=document.getElementById('impS
 
 // ===================== COUNTDOWN =====================
 function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));document.getElementById('cdNum').textContent=d}
+
+// ===================== SHARED CATEGORIES (To-Do / Notes / Itinerary / Calendar) =====================
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function _uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+const DEFAULT_CATS=[
+  {name:'Flights',color:'#5fa0db'},{name:'Hotels',color:'#ecc879'},{name:'Activities',color:'#54b27a'},
+  {name:'Umrah / Religious',color:'#3fb6a8'},{name:'Food & Dining',color:'#e0a13a'},{name:'Logistics / Transport',color:'#9b8cdb'},
+  {name:'Shopping',color:'#db8cc0'},{name:'Health / Pharmacy',color:'#e5544b'},{name:'Family / Personal',color:'#8b94a3'}
+];
+function tCats(){return (tData.cats&&tData.cats.length)?tData.cats:DEFAULT_CATS.slice()}
+function catColor(name){if(!name)return 'var(--muted)';const c=tCats().find(x=>x.name===name);return c?c.color:'var(--muted)'}
+function catOptions(sel){return '<option value="">— Category —</option>'+tCats().map(c=>`<option value="${esc(c.name)}"${sel===c.name?' selected':''}>${esc(c.name)}</option>`).join('')}
+async function saveT(){try{await sSet(T_KEY,JSON.stringify(tData))}catch(e){}}
+function ensureCatsSeeded(){if(!tData.cats||!tData.cats.length)tData.cats=DEFAULT_CATS.slice()}
+
+function renderCatManager(){
+  const el=document.getElementById('catMgr');if(!el)return;ensureCatsSeeded();
+  el.innerHTML=tData.cats.map((c,i)=>`<span class="cat-chip"><input type="color" value="${c.color}" onchange="setCatColor(${i},this.value)" title="Color for ${esc(c.name)}"><span class="cat-chip-name">${esc(c.name)}</span><button class="cat-chip-x" onclick="delCat(${i})" title="Remove">×</button></span>`).join('')
+    +`<span class="cat-chip cat-add"><input type="color" id="newCatColor" value="#5fa0db"><input type="text" id="newCatName" placeholder="New category…" onkeydown="if(event.key==='Enter'){event.preventDefault();addCat()}"><button class="cat-chip-add-btn" onclick="addCat()">+ Add</button></span>`;
+}
+function addCat(){const nEl=document.getElementById('newCatName');const n=nEl.value.trim();if(!n)return;const col=document.getElementById('newCatColor').value;ensureCatsSeeded();if(tData.cats.some(c=>c.name.toLowerCase()===n.toLowerCase())){alert('Category already exists');return}tData.cats.push({name:n,color:col});saveT();nEl.value='';refreshCatConsumers()}
+function setCatColor(i,col){ensureCatsSeeded();if(tData.cats[i]){tData.cats[i].color=col;saveT();refreshCatConsumers()}}
+function delCat(i){ensureCatsSeeded();const c=tData.cats[i];if(!c)return;if(!confirm('Remove category "'+c.name+'"? Existing items keep the label; its color reverts to the default gray.'))return;tData.cats.splice(i,1);saveT();refreshCatConsumers()}
+function refreshCatConsumers(){
+  renderCatManager();
+  ['tCat','nCat'].forEach(id=>{const d=document.getElementById(id);if(d){const v=d.value;d.innerHTML=catOptions();d.value=v}});
+  ['tfCat','nfCat'].forEach(id=>{const d=document.getElementById(id);if(d){const v=d.value;d.innerHTML='<option value="">All categories</option>'+tCats().map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');d.value=v}});
+  if(_rendered.has('todo'))renderTodos();if(_rendered.has('notes'))renderNotes();if(_rendered.has('itinerary'))renderItin();
+}
+
+// ===================== TO-DO LIST =====================
+const TODO_PRIOS=['Low','Medium','High','Urgent'];
+const TODO_STATUSES=['Not started','In progress','Done','Blocked'];
+const PRIO_COLOR={'Low':'var(--muted)','Medium':'var(--decision)','High':'var(--soon)','Urgent':'var(--critical)'};
+let _todoFilter={status:'',cat:'',sort:'due'};
+
+function itinDayOptions(sel){return '<option value="">— Itinerary day (optional) —</option>'+ITIN.map((d,i)=>`<option value="${i}"${String(sel)===String(i)?' selected':''}>${esc(d.date+' · '+d.title)}</option>`).join('')}
+function actionTaskOptions(sel){const tasks=[...document.querySelectorAll('#panel-actions .task')].map(t=>({id:t.dataset.tid,label:((t.querySelector('.t-id')?.textContent||'')+': '+(t.querySelector('.t-title')?.textContent||'')).trim().slice(0,72)})).filter(t=>t.id);return '<option value="">— Linked action (optional) —</option>'+tasks.map(t=>`<option value="${esc(t.id)}"${sel===t.id?' selected':''}>${esc(t.label)}</option>`).join('')}
+function whoOptions(sel){return '<option value="">— Who (optional) —</option>'+PURCHASERS.map(p=>`<option value="${esc(p)}"${sel===p?' selected':''}>${esc(p)}</option>`).join('')+`<option value="Everyone"${sel==='Everyone'?' selected':''}>Everyone</option>`}
+function buildTodoForm(){const m={tCat:catOptions(),tDay:itinDayOptions(),tAction:actionTaskOptions(),tWho:whoOptions()};for(const id in m){const e=document.getElementById(id);if(e&&!e.value)e.innerHTML=m[id]}}
+
+function addTodo(){
+  const title=document.getElementById('tTitle').value.trim();if(!title){alert('Enter a to-do title');return}
+  tData.todos.push({id:_uid(),title,cat:document.getElementById('tCat').value,prio:document.getElementById('tPrio').value||'Medium',
+    status:document.getElementById('tStatus').value||'Not started',date:document.getElementById('tDate').value,time:document.getElementById('tTime').value,
+    dur:parseInt(document.getElementById('tDur').value)||0,day:document.getElementById('tDay').value,action:document.getElementById('tAction').value,
+    who:document.getElementById('tWho').value,note:document.getElementById('tNote').value.trim(),created:Date.now()});
+  saveT();clearTodoForm();renderTodos();if(_rendered.has('itinerary'))renderItin();
+}
+function clearTodoForm(){['tTitle','tDate','tTime','tDur','tNote','tCat','tDay','tAction','tWho'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const p=document.getElementById('tPrio');if(p)p.value='Medium';const s=document.getElementById('tStatus');if(s)s.value='Not started'}
+function toggleTodoDone(id){const t=tData.todos.find(x=>x.id===id);if(!t)return;t.status=(t.status==='Done')?'Not started':'Done';saveT();renderTodos();if(_rendered.has('itinerary'))renderItin()}
+function delTodo(id){if(!confirm('Delete this to-do?'))return;tData.todos=tData.todos.filter(x=>x.id!==id);saveT();renderTodos();if(_rendered.has('itinerary'))renderItin()}
+function editTodo(id){const t=tData.todos.find(x=>x.id===id);if(!t)return;
+  document.getElementById('tCat').innerHTML=catOptions(t.cat);document.getElementById('tDay').innerHTML=itinDayOptions(t.day);
+  document.getElementById('tAction').innerHTML=actionTaskOptions(t.action);document.getElementById('tWho').innerHTML=whoOptions(t.who);
+  document.getElementById('tTitle').value=t.title;document.getElementById('tPrio').value=t.prio||'Medium';document.getElementById('tStatus').value=t.status||'Not started';
+  document.getElementById('tDate').value=t.date||'';document.getElementById('tTime').value=t.time||'';document.getElementById('tDur').value=t.dur||'';document.getElementById('tNote').value=t.note||'';
+  tData.todos=tData.todos.filter(x=>x.id!==id);saveT();renderTodos();
+  const f=document.getElementById('tTitle');f.scrollIntoView({behavior:'smooth',block:'center'});f.focus();
+}
+function setTodoFilter(k,v){_todoFilter[k]=v;renderTodos()}
+function _prioRank(p){return TODO_PRIOS.indexOf(p)}
+function renderTodos(){
+  const box=document.getElementById('todoList');if(!box)return;buildTodoForm();renderCatManager();
+  const fc=document.getElementById('tfCat');if(fc){const v=fc.value;fc.innerHTML='<option value="">All categories</option>'+tCats().map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');fc.value=v}
+  let list=tData.todos.slice();
+  if(_todoFilter.status)list=list.filter(t=>t.status===_todoFilter.status);
+  if(_todoFilter.cat)list=list.filter(t=>t.cat===_todoFilter.cat);
+  list.sort((a,b)=>{if(_todoFilter.sort==='prio')return _prioRank(b.prio)-_prioRank(a.prio);if(_todoFilter.sort==='created')return b.created-a.created;const ad=(a.date||'9999-99')+(a.time||'99:99'),bd=(b.date||'9999-99')+(b.time||'99:99');return ad<bd?-1:ad>bd?1:0});
+  const open=tData.todos.filter(t=>t.status!=='Done').length;
+  const st=document.getElementById('todoStat');if(st)st.textContent=tData.todos.length+' total · '+open+' open';
+  if(!list.length){box.innerHTML='<div class="empty-note">No to-dos'+((_todoFilter.status||_todoFilter.cat)?' match the filter.':' yet — add one above.')+'</div>';return}
+  box.innerHTML=list.map(t=>{
+    const done=t.status==='Done',col=catColor(t.cat);
+    const dt=[t.date,t.time].filter(Boolean).join(' ');
+    const tags=[
+      t.cat?`<span class="td-tag" style="color:${col}">● ${esc(t.cat)}</span>`:'',
+      dt?`<span class="td-tag">🕑 ${esc(dt)}${t.dur?(' · '+t.dur+'m'):''}</span>`:'',
+      (t.day!==''&&t.day!=null&&ITIN[t.day])?`<span class="td-tag" title="Itinerary day">📅 ${esc(ITIN[t.day].date)}</span>`:'',
+      t.action?`<span class="td-tag" title="Linked action ${esc(t.action)}">🔗 ${esc(t.action)}</span>`:'',
+      t.who?`<span class="td-tag">👤 ${esc(t.who)}</span>`:''
+    ].join('');
+    return `<div class="td-item${done?' td-done':''}" style="border-left:3px solid ${col}">
+      <div class="td-check" onclick="toggleTodoDone('${t.id}')">${done?'<svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg>':''}</div>
+      <div class="td-body"><div class="td-top"><span class="td-title">${esc(t.title)}</span><span class="td-prio" style="color:${PRIO_COLOR[t.prio]||'var(--muted)'}">${esc(t.prio)}</span><span class="td-status">${esc(t.status)}</span></div>
+        <div class="td-tags">${tags}</div>${t.note?`<div class="td-note">${esc(t.note)}</div>`:''}</div>
+      <div class="td-actions"><button onclick="editTodo('${t.id}')" title="Edit">✎</button><button onclick="delTodo('${t.id}')" title="Delete">🗑</button></div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== NOTES =====================
+const NOTE_CTX=[{v:'general',l:'General'},{v:'expenses',l:'Expenses'},{v:'itinerary',l:'Itinerary'},{v:'todo',l:'To-Do'},{v:'calendar',l:'Calendar'},{v:'benefits',l:'Benefits'},{v:'reference',l:'Reference'}];
+let _noteFilter={ctx:'',cat:''};
+function noteCtxOptions(sel){return NOTE_CTX.map(c=>`<option value="${c.v}"${sel===c.v?' selected':''}>${c.l}</option>`).join('')}
+function ctxLabel(v){const c=NOTE_CTX.find(x=>x.v===v);return c?c.l:'General'}
+function buildNoteForm(){const c=document.getElementById('nCat');if(c&&!c.value)c.innerHTML=catOptions();const x=document.getElementById('nCtx');if(x&&!x.options.length)x.innerHTML=noteCtxOptions('general')}
+function addNote(){
+  const title=document.getElementById('nTitle').value.trim(),body=document.getElementById('nBody').value.trim();
+  if(!title&&!body){alert('Enter a note title or body');return}
+  tData.notes.push({id:_uid(),title,body,cat:document.getElementById('nCat').value,ctx:document.getElementById('nCtx').value||'general',pin:document.getElementById('nPin').checked,created:Date.now(),updated:Date.now()});
+  saveT();clearNoteForm();renderNotes();if(_rendered.has('itinerary'))renderItin();
+}
+function clearNoteForm(){['nTitle','nBody','nCat'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const p=document.getElementById('nPin');if(p)p.checked=false;const x=document.getElementById('nCtx');if(x)x.value='general'}
+function togglePin(id){const n=tData.notes.find(x=>x.id===id);if(!n)return;n.pin=!n.pin;n.updated=Date.now();saveT();renderNotes()}
+function delNote(id){if(!confirm('Delete this note?'))return;tData.notes=tData.notes.filter(x=>x.id!==id);saveT();renderNotes();if(_rendered.has('itinerary'))renderItin()}
+function editNote(id){const n=tData.notes.find(x=>x.id===id);if(!n)return;
+  document.getElementById('nCat').innerHTML=catOptions(n.cat);document.getElementById('nCtx').innerHTML=noteCtxOptions(n.ctx||'general');
+  document.getElementById('nTitle').value=n.title||'';document.getElementById('nBody').value=n.body||'';document.getElementById('nPin').checked=!!n.pin;
+  tData.notes=tData.notes.filter(x=>x.id!==id);saveT();renderNotes();
+  const f=document.getElementById('nTitle');f.scrollIntoView({behavior:'smooth',block:'center'});f.focus();
+}
+function setNoteFilter(k,v){_noteFilter[k]=v;renderNotes()}
+function renderNotes(){
+  const box=document.getElementById('notesList');if(!box)return;buildNoteForm();
+  const fc=document.getElementById('nfCat');if(fc){const v=fc.value;fc.innerHTML='<option value="">All categories</option>'+tCats().map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');fc.value=v}
+  let list=tData.notes.slice();
+  if(_noteFilter.ctx)list=list.filter(n=>(n.ctx||'general')===_noteFilter.ctx);
+  if(_noteFilter.cat)list=list.filter(n=>n.cat===_noteFilter.cat);
+  list.sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||b.updated-a.updated);
+  const st=document.getElementById('notesStat');if(st)st.textContent=tData.notes.length+' note'+(tData.notes.length===1?'':'s');
+  if(!list.length){box.innerHTML='<div class="empty-note">No notes'+((_noteFilter.ctx||_noteFilter.cat)?' match the filter.':' yet — add one above.')+'</div>';return}
+  box.innerHTML=list.map(n=>{const col=catColor(n.cat);
+    return `<div class="note-card"${n.cat?` style="border-top:3px solid ${col}"`:''}>
+      <div class="note-head"><span class="note-title">${n.pin?'📌 ':''}${esc(n.title||'(untitled)')}</span>
+        <div class="note-actions"><button onclick="togglePin('${n.id}')" title="${n.pin?'Unpin':'Pin'}">${n.pin?'📌':'📍'}</button><button onclick="editNote('${n.id}')" title="Edit">✎</button><button onclick="delNote('${n.id}')" title="Delete">🗑</button></div></div>
+      ${n.body?`<div class="note-body">${esc(n.body)}</div>`:''}
+      <div class="note-tags"><span class="td-tag">🗂 ${esc(ctxLabel(n.ctx))}</span>${n.cat?`<span class="td-tag" style="color:${col}">● ${esc(n.cat)}</span>`:''}</div>
+    </div>`;}).join('');
+}
+
+// ---- Itinerary integration: linked to-dos shown under each day ----
+function dayTodoFooter(i){
+  const tds=tData.todos.filter(t=>String(t.day)===String(i));
+  const nts=tData.notes.filter(n=>(n.ctx||'')==='itinerary');
+  if(!tds.length)return nts.length&&i===0?`<div class="day-todos"><span class="day-todos-lbl">📝 ${nts.length} itinerary note${nts.length===1?'':'s'} — see Notes tab</span></div>`:'';
+  const chips=tds.map(t=>`<span class="day-todo${t.status==='Done'?' done':''}" style="border-color:${catColor(t.cat)}"><span class="dt-dot" style="background:${catColor(t.cat)}"></span>${esc(t.title)}${t.time?(' · '+esc(t.time)):''}</span>`).join('');
+  return `<div class="day-todos"><span class="day-todos-lbl">📋 To-dos</span>${chips}</div>`;
+}
 
 // ===================== INIT =====================
 (async function(){
