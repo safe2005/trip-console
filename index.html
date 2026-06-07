@@ -238,8 +238,8 @@ footer .save-state{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;fon
 
 /* Low Data Mode */
 body.lowdata::before{display:none!important}
-body.lowdata{background:#0d1014!important}
-body.lowdata header{backdrop-filter:none!important;background:#0d1014!important}
+body.lowdata{background:var(--bg)!important}
+body.lowdata header{backdrop-filter:none!important;background:var(--bg)!important}
 body.lowdata .search-input:focus,body.lowdata .search-dropdown{box-shadow:none!important}
 body.lowdata *{transition:none!important;animation:none!important}
 body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-section,body.lowdata .summary,body.lowdata .pt-card{background:var(--surface)!important}
@@ -341,8 +341,16 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .day-items{font-size:13px;color:var(--muted);margin-top:4px}
 .day-items div{padding:2px 0}
 .day-items .flight{color:var(--decision)}.day-items .hotel{color:var(--accent2)}.day-items .alert{color:var(--critical);font-weight:600}
+/* ===== LIGHT THEME ===== */
+[data-theme="light"]{--bg:#f5f6f8;--bg2:#ebecf0;--surface:#ffffff;--surface2:#f0f1f4;--border:#d0d4da;--border2:#bcc0c8;--text:#1a1d23;--muted:#5e6573;--faint:#9da3ae;--accent:#b5821f;--accent2:#956a14;--critical:#cc2d2d;--soon:#b07316;--ok:#1f8650;--decision:#2b6aa0;--crit-bg:rgba(204,45,45,.07);--soon-bg:rgba(176,115,22,.07);--ok-bg:rgba(31,134,80,.07);--dec-bg:rgba(43,106,160,.07)}
+[data-theme="light"] body{background:var(--bg)}
+[data-theme="light"] header{background:linear-gradient(180deg,rgba(245,246,248,.97),rgba(245,246,248,.86))}
+[data-theme="light"] .search-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:16px;line-height:1;align-self:center;transition:.18s}
+.theme-btn:hover{border-color:var(--accent)}
 
 </style>
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
 </head>
 <body>
 
@@ -370,6 +378,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       </div>
       <div class="ring-meta"><b id="doneCount">0</b>/<span id="totCount">0</span><br>tasks</div>
     </div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Switch light / dark mode">☀️</button>
   </div>
   <div class="main-tabs" id="mainTabs">
     <div class="mtab on" data-tab="actions">Actions</div>
@@ -656,6 +665,10 @@ function applyLowData(on){
   if(on){unloadFonts()}else{loadFonts()}
 }
 function toggleLowData(){const on=document.getElementById('ldToggle').checked;localStorage.setItem('tc_lowdata',on?'1':'0');applyLowData(on);if(on&&_pendingSync){/* keep timer */}}
+// ---- Light / Dark theme ----
+function getThemePref(){return localStorage.getItem('tc_theme')||'dark'}
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('themeBtn');if(b)b.textContent=t==='dark'?'☀️':'🌙'}
+function toggleTheme(){const t=getThemePref()==='dark'?'light':'dark';localStorage.setItem('tc_theme',t);applyTheme(t)}
 function manualSync(){flushSync(true)}
 
 // ===================== STORAGE ABSTRACTION (3-tier: GitHub > server > browser) =====================
@@ -1649,6 +1662,7 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   document.getElementById('rateEGP').value=eData.rates.EGP;document.getElementById('rateSAR').value=eData.rates.SAR;
   ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
+  applyTheme(getThemePref());   // <head> script already set data-theme for no-flash; this sets the button icon
   document.getElementById('searchInput').addEventListener('input',onSearchInput);
   ss(_sMode==='cloud'?'✅ cloud mode (GitHub Gist)':_sMode==='browser'?'⚠️ browser only (open ⚙ Sync to connect GitHub)':'⚠️ in-memory only');
   updateCfgStatus();
