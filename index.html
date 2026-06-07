@@ -413,6 +413,28 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .itin-form-wrap{display:none;border:1px solid var(--accent);border-radius:12px;padding:13px;margin:8px 0 14px;background:var(--surface)}
 .itin-form-wrap.show{display:block}
 .itin-form-title{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+/* ===== CALENDAR ===== */
+.cal-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.cal-nav{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px;cursor:pointer}
+.cal-nav:hover{border-color:var(--accent);color:var(--accent)}
+.cal-range-lbl{font-weight:600;font-size:14px;color:var(--text);min-width:150px;text-align:center}
+.cal-hours{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);margin-left:auto;display:flex;align-items:center;gap:6px}
+.cal-hours select{font-family:inherit;font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;outline:none}
+.cal-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:13px;background:var(--surface)}
+.cal-grid{min-width:680px}
+.cal-head{display:grid;grid-template-columns:48px repeat(7,1fr);position:sticky;top:0;background:var(--surface);z-index:3;border-bottom:1px solid var(--border)}
+.cal-dh{padding:8px 4px;text-align:center;border-left:1px solid var(--border)}
+.cal-dh.today{background:var(--ok-bg)}
+.cal-dh-wd{display:block;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cal-dh-d{display:block;font-weight:600;font-size:15px;color:var(--text);margin-top:1px}
+.cal-body{display:grid;grid-template-columns:48px repeat(7,1fr)}
+.cal-hr{position:relative;border-bottom:1px solid var(--border)}
+.cal-hr span{position:absolute;top:-7px;right:6px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;color:var(--faint)}
+.cal-col{position:relative;border-left:1px solid var(--border)}
+.cal-slot{border-bottom:1px solid var(--border)}
+.cal-ev{position:absolute;border-radius:6px;padding:2px 5px;font-size:10.5px;line-height:1.25;color:var(--text);overflow:hidden;cursor:pointer;box-sizing:border-box}
+.cal-ev:hover{filter:brightness(1.18);z-index:5}
+.cal-ev-t{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:600;font-size:9.5px;opacity:.85}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -452,6 +474,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <div class="mtab" data-tab="itinerary">Itinerary</div>
     <div class="mtab" data-tab="todo">To-Do</div>
     <div class="mtab" data-tab="notes">Notes</div>
+    <div class="mtab" data-tab="calendar">Calendar</div>
     <div class="mtab" data-tab="reference">Reference</div>
     <div class="mtab" data-tab="settings" style="margin-left:auto;border:1px solid var(--border)">⚙ Sync</div>
   </div>
@@ -669,6 +692,21 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="nfCat" onchange="setNoteFilter('cat',this.value)"><option value="">All categories</option></select>
   </div>
   <div id="notesList" class="notes-list"></div>
+</div>
+
+<!-- ===== PANEL: CALENDAR ===== -->
+<div class="panel" id="panel-calendar">
+  <div class="section-title" style="border:none;margin-top:12px">Calendar <span class="stat-pill" id="calTzLbl"></span></div>
+  <div class="section-sub">Weekly view of timed itinerary items and to-dos. Each event's time is anchored to its destination timezone and shown converted to your device's local time. Block colors follow the shared categories (itinerary items without a category use their location color). Click any event to open and edit it.</div>
+  <div class="cal-controls">
+    <button class="cal-nav" onclick="calShiftWeek(-1)">‹ Prev</button>
+    <span class="cal-range-lbl" id="calRangeLbl"></span>
+    <button class="cal-nav" onclick="calShiftWeek(1)">Next ›</button>
+    <button class="cal-nav" onclick="calTripStart()">Trip start</button>
+    <button class="cal-nav" onclick="calThisWeek()">This week</button>
+    <span class="cal-hours">Hours <select id="calStartSel" onchange="setCalStart(this.value)"></select> – <select id="calEndSel" onchange="setCalEnd(this.value)"></select></span>
+  </div>
+  <div class="cal-scroll"><div class="cal-grid" id="calGrid"></div></div>
 </div>
 
 <!-- ===== PANEL 4: REFERENCE ===== -->
@@ -1069,6 +1107,7 @@ document.getElementById('mainTabs').addEventListener('click',e=>{
 // ===================== LAZY TAB RENDER =====================
 const _rendered=new Set();
 function renderTab(tab){
+  if(tab==='calendar'){renderCal();return}
   if(_rendered.has(tab))return;
   _rendered.add(tab);
   if(tab==='actions')renderActions();
@@ -1962,6 +2001,88 @@ function dayTodoFooter(i){
   if(!tds.length)return nts.length&&i===0?`<div class="day-todos"><span class="day-todos-lbl">📝 ${nts.length} itinerary note${nts.length===1?'':'s'} — see Notes tab</span></div>`:'';
   const chips=tds.map(t=>`<span class="day-todo${t.status==='Done'?' done':''}" style="border-color:${catColor(t.cat)}"><span class="dt-dot" style="background:${catColor(t.cat)}"></span>${esc(t.title)}${t.time?(' · '+esc(t.time)):''}</span>`).join('');
   return `<div class="day-todos"><span class="day-todos-lbl">📋 To-dos</span>${chips}</div>`;
+}
+
+// ===================== CALENDAR =====================
+const MONTHS_3={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+const CAL_ROW_H=46;
+function parseItinDate(s){const m=String(s||'').match(/([A-Za-z]{3})\s+(\d+)/);return (m&&MONTHS_3[m[1]]!=null)?{y:2026,mo:MONTHS_3[m[1]],d:+m[2]}:null}
+function tzOffsetMin(timeZone,date){try{const s=new Intl.DateTimeFormat('en-US',{timeZone,timeZoneName:'longOffset'}).formatToParts(date).find(p=>p.type==='timeZoneName').value;const m=s.match(/([+-])(\d{2}):?(\d{2})?/);return m?(m[1]==='-'?-1:1)*(+m[2]*60+ +(m[3]||0)):0}catch(e){return 0}}
+function destInstant(Y,mo,d,h,mi,tz){const off=tzOffsetMin(tz,new Date(Date.UTC(Y,mo,d,h,mi)));return new Date(Date.UTC(Y,mo,d,h,mi)-off*60000)}
+function viewerTZ(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'local time'}catch(e){return 'local time'}}
+function switchToTab(tab){const b=document.querySelector('.mtab[data-tab="'+tab+'"]');if(b)b.click()}
+
+let _calStart=8,_calEnd=20,_calAnchor=null;
+function weekSunday(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-x.getDay());return x}
+function calWeekStart(){if(!_calAnchor)_calAnchor=weekSunday(new Date(2026,5,21));return _calAnchor}
+function calShiftWeek(n){_calAnchor=new Date(calWeekStart());_calAnchor.setDate(_calAnchor.getDate()+7*n);renderCal()}
+function calTripStart(){_calAnchor=weekSunday(new Date(2026,5,21));renderCal()}
+function calThisWeek(){_calAnchor=weekSunday(new Date());renderCal()}
+function setCalStart(v){_calStart=Math.max(0,Math.min(23,parseInt(v)));if(_calEnd<=_calStart)_calEnd=Math.min(24,_calStart+1);renderCal()}
+function setCalEnd(v){_calEnd=Math.max(_calStart+1,Math.min(24,parseInt(v)));renderCal()}
+function _h12(h){h=((h%24)+24)%24;let hh=h%12;if(hh===0)hh=12;return hh+(h<12?'a':'p')}
+function _fmtTime(inst){let h=inst.getHours();const mi=inst.getMinutes();let hh=h%12;if(hh===0)hh=12;return hh+(mi?':'+String(mi).padStart(2,'0'):'')+(h<12?'AM':'PM')}
+function _locColor(loc){return ({cairo:'#5fa0db',sharm:'#3fb6a8',makkah:'#54b27a',madinah:'#9b8cdb',transit:'#8b94a3'})[loc]||'#8b94a3'}
+function _alpha(c){if(c&&c[0]==='#'){const n=parseInt(c.slice(1),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},.22)`}return 'rgba(120,140,170,.18)'}
+
+function calEvents(){
+  const evs=[];
+  getItin().forEach(day=>{const pd=parseItinDate(day.date);if(!pd)return;
+    day.items.forEach(it=>{if(!it.time)return;const p=it.time.split(':');const h=+p[0],mi=+p[1]||0;if(isNaN(h))return;
+      evs.push({inst:destInstant(pd.y,pd.mo,pd.d,h,mi,day.tz||DEST_TZ_DEFAULT),dur:it.dur||60,label:it.v,cat:it.cat,loc:day.loc,kind:'itin',dayId:day.id,itemId:it.id})})});
+  (tData.todos||[]).forEach(t=>{if(!t.time)return;const p=t.time.split(':');const h=+p[0],mi=+p[1]||0;if(isNaN(h))return;
+    let pd=null,tz=DEST_TZ_DEFAULT;
+    if(t.day!==''&&t.day!=null&&getItin()[t.day]){const dy=getItin()[t.day];pd=parseItinDate(dy.date);tz=dy.tz||DEST_TZ_DEFAULT}
+    else if(t.date){const m=t.date.split('-');pd={y:+m[0],mo:+m[1]-1,d:+m[2]}}
+    if(!pd)return;
+    evs.push({inst:destInstant(pd.y,pd.mo,pd.d,h,mi,tz),dur:t.dur||30,label:t.title,cat:t.cat,kind:'todo',todoId:t.id})});
+  return evs;
+}
+
+function renderCal(){
+  const wrap=document.getElementById('calGrid');if(!wrap)return;
+  const ws=calWeekStart();
+  const days=[];for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(d.getDate()+i);days.push(d)}
+  const lbl=document.getElementById('calRangeLbl');if(lbl){const e=new Date(ws);e.setDate(e.getDate()+6);lbl.textContent=days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+  const tzl=document.getElementById('calTzLbl');if(tzl)tzl.textContent='your time · '+viewerTZ();
+  const ssEl=document.getElementById('calStartSel'),esEl=document.getElementById('calEndSel');
+  if(ssEl&&ssEl.dataset.b!=='1'){ssEl.innerHTML=Array.from({length:24},(_,h)=>`<option value="${h}">${_h12(h)}</option>`).join('');ssEl.dataset.b='1'}
+  if(esEl&&esEl.dataset.b!=='1'){esEl.innerHTML=Array.from({length:25},(_,h)=>`<option value="${h}">${h===24?'12a':_h12(h)}</option>`).join('');esEl.dataset.b='1'}
+  if(ssEl)ssEl.value=_calStart;if(esEl)esEl.value=_calEnd;
+
+  const hours=_calEnd-_calStart;
+  const evs=calEvents();
+  const cols=[[],[],[],[],[],[],[]];
+  const dayKey=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+  const k2c={};days.forEach((d,i)=>k2c[dayKey(d)]=i);
+  evs.forEach(e=>{const ci=k2c[dayKey(e.inst)];if(ci==null)return;const sh=e.inst.getHours()+e.inst.getMinutes()/60;cols[ci].push({...e,sh,eh:sh+Math.max(e.dur,15)/60})});
+  cols.forEach(list=>{list.sort((a,b)=>a.sh-b.sh||a.eh-b.eh);const lanes=[];list.forEach(e=>{let pl=false;for(let i=0;i<lanes.length;i++){if(e.sh>=lanes[i]-1e-9){e.lane=i;lanes[i]=e.eh;pl=true;break}}if(!pl){e.lane=lanes.length;lanes.push(e.eh)}});const n=lanes.length||1;list.forEach(e=>e.lanes=n)});
+
+  const today=new Date();today.setHours(0,0,0,0);
+  let html='<div class="cal-head"><div class="cal-gutter-h"></div>';
+  days.forEach(d=>{const isT=d.getTime()===today.getTime();html+=`<div class="cal-dh${isT?' today':''}"><span class="cal-dh-wd">${d.toLocaleDateString('en-US',{weekday:'short'})}</span><span class="cal-dh-d">${d.getDate()}</span></div>`});
+  html+='</div><div class="cal-body"><div class="cal-gutter">';
+  for(let h=_calStart;h<_calEnd;h++)html+=`<div class="cal-hr" style="height:${CAL_ROW_H}px"><span>${_h12(h)}</span></div>`;
+  html+='</div>';
+  let any=false;
+  days.forEach((d,ci)=>{
+    html+=`<div class="cal-col" style="height:${hours*CAL_ROW_H}px">`;
+    for(let h=_calStart;h<_calEnd;h++)html+=`<div class="cal-slot" style="height:${CAL_ROW_H}px"></div>`;
+    cols[ci].forEach(e=>{
+      if(e.sh>=_calEnd||e.eh<=_calStart)return;any=true;
+      const top=Math.max((e.sh-_calStart)*CAL_ROW_H,0);
+      const hh=Math.min((e.eh-e.sh)*CAL_ROW_H,(hours*CAL_ROW_H)-top);
+      const w=100/e.lanes,left=e.lane*w;
+      const col=e.cat?catColor(e.cat):(e.kind==='itin'?_locColor(e.loc):'#5fa0db');
+      const click=e.kind==='itin'?`editItinItem('${e.dayId}','${e.itemId}');switchToTab('itinerary')`:`switchToTab('todo')`;
+      const icon=e.kind==='todo'?'☑ ':'';
+      html+=`<div class="cal-ev" onclick="${click}" style="top:${top}px;height:${Math.max(hh,18)}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px);background:${_alpha(col)};border-left:3px solid ${col}" title="${esc(e.label)} · ${_fmtTime(e.inst)}"><span class="cal-ev-t">${_fmtTime(e.inst)}</span> ${icon}${esc(e.label)}</div>`;
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+  if(!any)html+='<div class="empty-note" style="margin:12px">No timed items this week. Add a time to itinerary items or to-dos, or jump to <b>Trip start</b>.</div>';
+  wrap.innerHTML=html;
 }
 
 // ===================== INIT =====================
