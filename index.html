@@ -833,7 +833,16 @@ const PAY_METHODS=[
 function onPayChange(){document.getElementById('payOtherWrap').classList.toggle('show',document.getElementById('ePay').value==='__other_pay__')}
 // Custom payment methods (parallel to custom categories): "Other" free-text entries persist into the dropdown.
 function _slugPay(n){return 'cust_'+String(n).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')}
-function allPays(){return [...PAY_METHODS.filter(p=>p.id!=='__other_pay__'),...((eData.customPays||[]).map(n=>({id:_slugPay(n),name:n,cardId:null})))]}
+// Sanitize custom payment names: drop blanks, anything that duplicates a built-in method
+// (e.g. "cash"), anything that would shadow the "Other" option, id collisions, and case-insensitive dups.
+function _cleanCustomNames(){
+  const bNames=new Set(PAY_METHODS.map(p=>p.name.toLowerCase())),bIds=new Set(PAY_METHODS.map(p=>p.id)),seen=new Set(),out=[];
+  (eData.customPays||[]).forEach(n=>{const name=String(n).trim();if(!name)return;const lc=name.toLowerCase();
+    if(bNames.has(lc)||lc==='other'||lc.includes('other (free text)'))return;
+    const id=_slugPay(name);if(id==='cust_'||bIds.has(id)||seen.has(lc))return;seen.add(lc);out.push(name)});
+  return out;
+}
+function allPays(){return [...PAY_METHODS.filter(p=>p.id!=='__other_pay__'),..._cleanCustomNames().map(n=>({id:_slugPay(n),name:n,cardId:null}))]}
 function rebuildPaySelect(){
   const pay=document.getElementById('ePay');if(!pay)return;const cur=pay.value;
   pay.innerHTML='<option value="">Payment type…</option>';
@@ -1075,9 +1084,11 @@ function renderExpenses(){rebuildRespList();rebuildDescList();const tb=document.
 function addExpense(){let cat=document.getElementById('eCat').value;const cur=document.getElementById('eCur').value,amt=parseFloat(document.getElementById('eAmt').value),desc=document.getElementById('eDesc').value.trim();
   const purchaser=document.getElementById('ePurchaser').value;
   let payId=document.getElementById('ePay').value,payName='';
-  if(payId==='__other_pay__'){const txt=document.getElementById('ePayOther').value.trim();if(!txt){alert('Enter a payment description');return}payName=txt;
-    if(!eData.customPays)eData.customPays=[];if(!eData.customPays.includes(txt)&&!PAY_METHODS.some(p=>p.name===txt)){eData.customPays.push(txt);rebuildPaySelect()}
-    payId=_slugPay(txt);document.getElementById('ePayOther').value='';document.getElementById('payOtherWrap').classList.remove('show');document.getElementById('ePay').value=''}
+  if(payId==='__other_pay__'){const txt=document.getElementById('ePayOther').value.trim();if(!txt){alert('Enter a payment description');return}
+    const lc=txt.toLowerCase();const builtin=PAY_METHODS.find(p=>p.name.toLowerCase()===lc&&p.id!=='__other_pay__');
+    if(builtin){payId=builtin.id;payName=builtin.name}
+    else{payName=txt;if(!eData.customPays)eData.customPays=[];if(!eData.customPays.some(n=>String(n).toLowerCase()===lc))eData.customPays.push(txt);eData.customPays=_cleanCustomNames();rebuildPaySelect();payId=_slugPay(txt)}
+    document.getElementById('ePayOther').value='';document.getElementById('payOtherWrap').classList.remove('show');document.getElementById('ePay').value=''}
   else{const pm=allPays().find(p=>p.id===payId);payName=pm?pm.name:payId}
   if(cat==='__other__'){cat=document.getElementById('eCustomCat').value.trim();if(!cat){alert('Enter a category name');return}
     if(!eData.customCats)eData.customCats=[];if(!eData.customCats.includes(cat)&&!CATEGORIES.includes(cat)){eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
@@ -1634,7 +1645,7 @@ function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));docu
   const bs=document.getElementById('bCard');CARDS.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;bs.appendChild(o)});
   rebuildCatSelects();
   const pur=document.getElementById('ePurchaser');PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pur.appendChild(o)});
-  const pay=document.getElementById('ePay');rebuildPaySelect();rebuildRespList();rebuildDescList();
+  eData.customPays=_cleanCustomNames();rebuildPaySelect();rebuildRespList();rebuildDescList();
   document.getElementById('rateEGP').value=eData.rates.EGP;document.getElementById('rateSAR').value=eData.rates.SAR;
   ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
