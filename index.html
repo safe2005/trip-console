@@ -612,6 +612,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <button class="btn btn-email" onclick="emailItin()">✉ Email</button>
     </div>
   </div>
+  <div class="cat-mgr-wrap"><div class="cat-mgr-lbl">🎨 Categories &amp; colors — shared across tabs</div><div class="cat-mgr" id="catMgrItin"></div></div>
   <div class="itin-form-wrap" id="itinFormWrap">
     <div class="itin-form-title" id="itinFormTitle">Edit itinerary item</div>
     <div class="form-row2">
@@ -698,6 +699,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 <div class="panel" id="panel-calendar">
   <div class="section-title" style="border:none;margin-top:12px">Calendar <span class="stat-pill" id="calTzLbl"></span></div>
   <div class="section-sub">Weekly view of timed itinerary items and to-dos. Each event's time is anchored to its destination timezone and shown converted to your device's local time. Block colors follow the shared categories (itinerary items without a category use their location color). Click any event to open and edit it.</div>
+  <div class="cat-mgr-wrap"><div class="cat-mgr-lbl">🎨 Categories &amp; colors — shared across tabs</div><div class="cat-mgr" id="catMgrCal"></div></div>
   <div class="cal-controls">
     <button class="cal-nav" onclick="calShiftWeek(-1)">‹ Prev</button>
     <span class="cal-range-lbl" id="calRangeLbl"></span>
@@ -1486,6 +1488,7 @@ function getItin(){return (tData.itin&&tData.itin.length)?tData.itin:__ITIN_SEED
 function findDay(id){return (tData.itin||[]).find(d=>d.id===id)}
 function renderItin(){
   const d=document.getElementById('itinDays');if(!d)return;d.innerHTML='';
+  renderCatManager();
   getItin().forEach((day,i)=>{
     const sel=itinSel.has(i);
     const items=day.items.map(it=>{
@@ -1878,12 +1881,10 @@ function catOptions(sel){return '<option value="">— Category —</option>'+tCa
 async function saveT(){try{await sSet(T_KEY,JSON.stringify(tData))}catch(e){}}
 function ensureCatsSeeded(){if(!tData.cats||!tData.cats.length)tData.cats=DEFAULT_CATS.slice()}
 
-function renderCatManager(){
-  const el=document.getElementById('catMgr');if(!el)return;ensureCatsSeeded();
-  el.innerHTML=tData.cats.map((c,i)=>`<span class="cat-chip"><input type="color" value="${c.color}" onchange="setCatColor(${i},this.value)" title="Color for ${esc(c.name)}"><span class="cat-chip-name">${esc(c.name)}</span><button class="cat-chip-x" onclick="delCat(${i})" title="Remove">×</button></span>`).join('')
-    +`<span class="cat-chip cat-add"><input type="color" id="newCatColor" value="#5fa0db"><input type="text" id="newCatName" placeholder="New category…" onkeydown="if(event.key==='Enter'){event.preventDefault();addCat()}"><button class="cat-chip-add-btn" onclick="addCat()">+ Add</button></span>`;
-}
-function addCat(){const nEl=document.getElementById('newCatName');const n=nEl.value.trim();if(!n)return;const col=document.getElementById('newCatColor').value;ensureCatsSeeded();if(tData.cats.some(c=>c.name.toLowerCase()===n.toLowerCase())){alert('Category already exists');return}tData.cats.push({name:n,color:col});saveT();nEl.value='';refreshCatConsumers()}
+function _catMgrHTML(){ensureCatsSeeded();return tData.cats.map((c,i)=>`<span class="cat-chip"><input type="color" value="${c.color}" onchange="setCatColor(${i},this.value)" title="Color for ${esc(c.name)}"><span class="cat-chip-name">${esc(c.name)}</span><button class="cat-chip-x" onclick="delCat(${i})" title="Remove">×</button></span>`).join('')
+  +`<span class="cat-chip cat-add"><input type="color" class="newCatColor" value="#5fa0db"><input type="text" class="newCatName" placeholder="New category…" onkeydown="if(event.key==='Enter'){event.preventDefault();addCat(this)}"><button class="cat-chip-add-btn" onclick="addCat(this)">+ Add</button></span>`}
+function renderCatManager(){document.querySelectorAll('.cat-mgr').forEach(el=>{el.innerHTML=_catMgrHTML()})}
+function addCat(el){const wrap=el.closest('.cat-mgr');if(!wrap)return;const nEl=wrap.querySelector('.newCatName');const n=nEl.value.trim();if(!n)return;const col=wrap.querySelector('.newCatColor').value;ensureCatsSeeded();if(tData.cats.some(c=>c.name.toLowerCase()===n.toLowerCase())){alert('Category already exists');return}tData.cats.push({name:n,color:col});saveT();refreshCatConsumers()}
 function setCatColor(i,col){ensureCatsSeeded();if(tData.cats[i]){tData.cats[i].color=col;saveT();refreshCatConsumers()}}
 function delCat(i){ensureCatsSeeded();const c=tData.cats[i];if(!c)return;if(!confirm('Remove category "'+c.name+'"? Existing items keep the label; its color reverts to the default gray.'))return;tData.cats.splice(i,1);saveT();refreshCatConsumers()}
 function refreshCatConsumers(){
@@ -1891,6 +1892,7 @@ function refreshCatConsumers(){
   ['tCat','nCat'].forEach(id=>{const d=document.getElementById(id);if(d){const v=d.value;d.innerHTML=catOptions();d.value=v}});
   ['tfCat','nfCat'].forEach(id=>{const d=document.getElementById(id);if(d){const v=d.value;d.innerHTML='<option value="">All categories</option>'+tCats().map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');d.value=v}});
   if(_rendered.has('todo'))renderTodos();if(_rendered.has('notes'))renderNotes();if(_rendered.has('itinerary'))renderItin();
+  if(document.getElementById('calGrid'))renderCal();
 }
 
 // ===================== TO-DO LIST =====================
@@ -2041,6 +2043,7 @@ function calEvents(){
 
 function renderCal(){
   const wrap=document.getElementById('calGrid');if(!wrap)return;
+  renderCatManager();
   const ws=calWeekStart();
   const days=[];for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(d.getDate()+i);days.push(d)}
   const lbl=document.getElementById('calRangeLbl');if(lbl){const e=new Date(ws);e.setDate(e.getDate()+6);lbl.textContent=days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+e.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
