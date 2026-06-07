@@ -398,6 +398,21 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .day-todo{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-left-width:3px;border-radius:6px;padding:2px 8px}
 .day-todo.done{opacity:.5;text-decoration:line-through}
 .dt-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+/* ===== EDITABLE ITINERARY ===== */
+.itin-item{display:flex;align-items:baseline;gap:7px;padding:3px 0 3px 6px}
+.itin-item .it-edit{margin-left:auto;display:inline-flex;gap:1px;opacity:0;transition:.15s;flex-shrink:0}
+.itin-item:hover .it-edit{opacity:1}
+.it-edit button{background:none;border:none;color:var(--faint);cursor:pointer;font-size:12px;padding:1px 4px;border-radius:5px}
+.it-edit button:hover{background:var(--surface2);color:var(--text)}
+.it-time{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--accent2);background:var(--surface2);padding:1px 6px;border-radius:5px;white-space:nowrap;flex-shrink:0}
+.it-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;align-self:center}
+.it-text{flex:1;min-width:0}
+.day-tz{margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 5px;cursor:pointer;outline:none}
+.add-item-btn{margin-top:8px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.04em;color:var(--faint);background:none;border:1px dashed var(--border);border-radius:7px;padding:4px 11px;cursor:pointer}
+.add-item-btn:hover{border-color:var(--accent);color:var(--accent)}
+.itin-form-wrap{display:none;border:1px solid var(--accent);border-radius:12px;padding:13px;margin:8px 0 14px;background:var(--surface)}
+.itin-form-wrap.show{display:block}
+.itin-form-title{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -557,7 +572,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 <!-- ===== PANEL: ITINERARY ===== -->
 <div class="panel" id="panel-itinerary">
   <div class="section-title" style="border:none;margin-top:12px">Trip Itinerary — Jun 21 to Jul 12, 2026</div>
-  <div class="section-sub">Select days to print or email. Use the segment buttons for quick selection.</div>
+  <div class="section-sub">Select days to print or email. Items are editable — set a time, duration, and category on any item (times and categories feed the Calendar). Each day has a destination timezone.</div>
   <div class="itin-bar">
     <div class="seg" id="locSeg">
       <button data-loc="all" class="on">All</button>
@@ -572,6 +587,21 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <button class="btn btn-copy" onclick="copyItin()">📋 Copy</button>
       <button class="btn btn-print" onclick="printItin()">🖨 Print</button>
       <button class="btn btn-email" onclick="emailItin()">✉ Email</button>
+    </div>
+  </div>
+  <div class="itin-form-wrap" id="itinFormWrap">
+    <div class="itin-form-title" id="itinFormTitle">Edit itinerary item</div>
+    <div class="form-row2">
+      <select id="iiDay" title="Which day"></select>
+      <select id="iiType"><option value="flight">✈ Flight</option><option value="hotel">🏨 Hotel</option><option value="act" selected>• Activity</option><option value="alert">⚠ Alert</option></select>
+      <input type="text" id="iiText" placeholder="Item description" style="flex:2;min-width:200px">
+    </div>
+    <div class="form-row2">
+      <label class="fld"><span class="fld-l">Time (local)</span><input type="time" id="iiTime"></label>
+      <label class="fld"><span class="fld-l">Duration min</span><input type="number" id="iiDur" min="0" step="15" placeholder="90"></label>
+      <select id="iiCat"></select>
+      <button class="btn-add" onclick="saveItinItem()">Save item</button>
+      <button class="btn-clear" onclick="hideItinForm()">Cancel</button>
     </div>
   </div>
   <div id="itinDays"></div>
@@ -916,7 +946,7 @@ async function connectGist(){
   }
   _sMode='cloud';
   _rendered.clear();
-  ITIN.forEach((_,i)=>itinSel.add(i));
+  getItin().forEach((_,i)=>itinSel.add(i));
   rebuildCatSelects();
   if(LOWDATA){renderTab('actions')}else{renderAllTabs()}
   updateCfgStatus();ss('✅ synced to GitHub · '+_ts());
@@ -1018,6 +1048,7 @@ async function loadAll(){
   if(!aState.tasks)aState.tasks={}; if(!aState.gates)aState.gates={};
   if(!bData.txs)bData.txs=[]; if(!eData.expenses)eData.expenses=[];
   if(!tData.todos)tData.todos=[]; if(!tData.notes)tData.notes=[]; if(!tData.cats)tData.cats=[];
+  seedItin();
   if(!eData.budgets)eData.budgets={...DEF_BUDGETS}; if(!eData.rates)eData.rates={...DEF_RATES};
   if(!eData.customCats)eData.customCats=[];if(!eData.customPays)eData.customPays=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
 }
@@ -1283,7 +1314,7 @@ function onPtChange(el){pData.balances[el.dataset.pid]=parseFloat(el.value)||0;r
 
 
 // ===================== ITINERARY =====================
-const ITIN=[
+const __ITIN_SEED=[
 {date:'Jun 21',day:'Sun',loc:'transit',title:'Departure',items:[
   {t:'flight',v:'✈ AA 730 CLT→LHR (evening)'},
   {t:'act',v:'Admirals Club at CLT (all 4 Citi cardholders + guests)'},
@@ -1402,32 +1433,71 @@ const ITIN=[
 ];
 
 let itinSel=new Set();
+// Destination timezone per location group (IANA; Intl handles DST). Editable per-day.
+const LOC_TZ={transit:'Africa/Cairo',cairo:'Africa/Cairo',sharm:'Africa/Cairo',makkah:'Asia/Riyadh',madinah:'Asia/Riyadh',jeddah:'Asia/Riyadh'};
+const DEST_TZ_DEFAULT='Africa/Cairo';
+const TZ_CHOICES=[['Africa/Cairo','Egypt (Cairo/Sharm)'],['Asia/Riyadh','Saudi (Makkah/Madinah)'],['Europe/London','London (transit)'],['America/New_York','Charlotte/ET']];
+// Editable itinerary lives in the synced store, seeded once from __ITIN_SEED.
+function seedItin(){
+  if(tData.itin&&tData.itin.length)return;
+  tData.itin=__ITIN_SEED.map(d=>({id:_uid(),date:d.date,day:d.day,loc:d.loc,title:d.title,tz:LOC_TZ[d.loc]||DEST_TZ_DEFAULT,
+    items:d.items.map(it=>({id:_uid(),t:it.t,v:it.v,time:it.time||'',dur:it.dur||0,cat:it.cat||''}))}));
+}
+function getItin(){return (tData.itin&&tData.itin.length)?tData.itin:__ITIN_SEED}
+function findDay(id){return (tData.itin||[]).find(d=>d.id===id)}
 function renderItin(){
-  const d=document.getElementById('itinDays');d.innerHTML='';
-  ITIN.forEach((day,i)=>{
+  const d=document.getElementById('itinDays');if(!d)return;d.innerHTML='';
+  getItin().forEach((day,i)=>{
     const sel=itinSel.has(i);
-    const items=day.items.map(it=>`<div class="${it.t}">${it.v}</div>`).join('');
+    const items=day.items.map(it=>{
+      const col=it.cat?catColor(it.cat):'';
+      const tline=it.time?`<span class="it-time">${esc(it.time)}${it.dur?(' · '+it.dur+'m'):''}</span>`:'';
+      const dot=it.cat?`<span class="it-dot" style="background:${col}"></span>`:'';
+      return `<div class="itin-item ${it.t}"${col?` style="border-left:3px solid ${col}"`:''}>${dot}${tline}<span class="it-text">${esc(it.v)}</span><span class="it-edit"><button onclick="editItinItem('${day.id}','${it.id}')" title="Edit">✎</button><button onclick="delItinItem('${day.id}','${it.id}')" title="Delete">🗑</button></span></div>`;
+    }).join('');
+    const tzSel=`<select class="day-tz" onchange="setDayTz('${day.id}',this.value)" title="Destination timezone for this day">${TZ_CHOICES.map(([z,l])=>`<option value="${z}"${day.tz===z?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
     d.innerHTML+=`<div class="day-card ${sel?'selected':''}" data-idx="${i}" data-loc="${day.loc}">
       <div class="day-cb" onclick="toggleDay(${i})"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg></div>
-      <div class="day-main"><div class="day-top"><span class="day-date">${day.date} (${day.day})</span><span class="day-loc loc-${day.loc}">${day.loc}</span><span class="day-title">${day.title}</span></div><div class="day-items">${items}</div>${dayTodoFooter(i)}</div>
+      <div class="day-main"><div class="day-top"><span class="day-date">${esc(day.date)} (${esc(day.day)})</span><span class="day-loc loc-${day.loc}">${esc(day.loc)}</span><span class="day-title">${esc(day.title)}</span>${tzSel}</div>
+        <div class="day-items">${items}</div>
+        <button class="add-item-btn" onclick="addItinItemTo('${day.id}')">+ add item</button>
+        ${dayTodoFooter(i)}</div>
     </div>`;
   });
   updSelCount();
 }
+let _editItin=null;
+function showItinForm(){document.getElementById('itinFormWrap').classList.add('show');document.getElementById('itinFormWrap').scrollIntoView({behavior:'smooth',block:'center'})}
+function hideItinForm(){document.getElementById('itinFormWrap').classList.remove('show');_editItin=null}
+function buildItinDayPicker(sel){const s=document.getElementById('iiDay');if(s)s.innerHTML=getItin().map(d=>`<option value="${d.id}"${sel===d.id?' selected':''}>${esc(d.date+' · '+d.title)}</option>`).join('')}
+function addItinItemTo(dayId){_editItin={dayId};buildItinDayPicker(dayId);document.getElementById('iiText').value='';document.getElementById('iiType').value='act';document.getElementById('iiTime').value='';document.getElementById('iiDur').value='';document.getElementById('iiCat').innerHTML=catOptions();document.getElementById('itinFormTitle').textContent='Add itinerary item';showItinForm();document.getElementById('iiText').focus()}
+function editItinItem(dayId,itemId){const day=findDay(dayId);if(!day)return;const it=day.items.find(x=>x.id===itemId);if(!it)return;_editItin={dayId,itemId};buildItinDayPicker(dayId);document.getElementById('iiText').value=it.v;document.getElementById('iiType').value=it.t;document.getElementById('iiTime').value=it.time||'';document.getElementById('iiDur').value=it.dur||'';document.getElementById('iiCat').innerHTML=catOptions(it.cat);document.getElementById('itinFormTitle').textContent='Edit itinerary item';showItinForm();document.getElementById('iiText').focus()}
+function saveItinItem(){
+  const text=document.getElementById('iiText').value.trim();if(!text){alert('Enter item text');return}
+  const dayId=document.getElementById('iiDay').value;const day=findDay(dayId);if(!day)return;
+  const data={t:document.getElementById('iiType').value,v:text,time:document.getElementById('iiTime').value,dur:parseInt(document.getElementById('iiDur').value)||0,cat:document.getElementById('iiCat').value};
+  if(_editItin&&_editItin.itemId){
+    if(_editItin.dayId!==dayId){const od=findDay(_editItin.dayId);if(od)od.items=od.items.filter(x=>x.id!==_editItin.itemId);day.items.push({id:_editItin.itemId,...data})}
+    else{const it=day.items.find(x=>x.id===_editItin.itemId);if(it)Object.assign(it,data)}
+  } else {day.items.push({id:_uid(),...data})}
+  saveT();hideItinForm();renderItin();if(_rendered.has('todo'))renderTodos();
+}
+function delItinItem(dayId,itemId){if(!confirm('Delete this itinerary item?'))return;const day=findDay(dayId);if(!day)return;day.items=day.items.filter(x=>x.id!==itemId);saveT();renderItin()}
+function setDayTz(dayId,tz){const day=findDay(dayId);if(day){day.tz=tz;saveT()}}
 function toggleDay(i){if(itinSel.has(i))itinSel.delete(i);else itinSel.add(i);const c=document.querySelector(`.day-card[data-idx="${i}"]`);if(c)c.classList.toggle('selected');updSelCount()}
 function selectByLoc(loc){
   itinSel.clear();
-  if(loc==='all') ITIN.forEach((_,i)=>itinSel.add(i));
-  else ITIN.forEach((d,i)=>{if(d.loc===loc)itinSel.add(i)});
+  if(loc==='all') getItin().forEach((_,i)=>itinSel.add(i));
+  else getItin().forEach((d,i)=>{if(d.loc===loc)itinSel.add(i)});
   document.querySelectorAll('.day-card').forEach(c=>{c.classList.toggle('selected',itinSel.has(+c.dataset.idx))});
   updSelCount();
 }
-function updSelCount(){document.getElementById('selCount').textContent=itinSel.size+' of '+ITIN.length+' selected'}
+function updSelCount(){document.getElementById('selCount').textContent=itinSel.size+' of '+getItin().length+' selected'}
 document.getElementById('locSeg').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;document.querySelectorAll('#locSeg button').forEach(b=>b.classList.remove('on'));e.target.classList.add('on');selectByLoc(e.target.dataset.loc)});
 
 function getSelText(){
   const lines=['EGYPT + UMRAH 2026 — TRIP ITINERARY','8 adults from Charlotte, NC','═'.repeat(50),''];
-  ITIN.forEach((d,i)=>{if(!itinSel.has(i))return;
+  getItin().forEach((d,i)=>{if(!itinSel.has(i))return;
     lines.push(`${d.date} (${d.day}) — ${d.title.toUpperCase()} [${d.loc}]`);
     d.items.forEach(it=>lines.push('  '+it.v));lines.push('');
   });
@@ -1444,7 +1514,7 @@ function printItin(){if(!itinSel.size){alert('Select at least one day first');re
   const w=window.open('','_blank','width=800,height=900');
   let h='<html><head><title>Trip Itinerary</title><style>body{font-family:Georgia,serif;max-width:700px;margin:30px auto;color:#1a1a1a}h1{font-size:22px;margin-bottom:2px}h2{font-size:12px;color:#666;font-weight:normal;margin-bottom:20px}.day{margin:16px 0;padding:12px 16px;border:1px solid #ddd;border-radius:8px;page-break-inside:avoid}.day-h{font-size:15px;font-weight:bold;margin-bottom:4px}.loc{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-left:8px}.item{font-size:13px;color:#444;padding:2px 0}.alert{color:#c0392b;font-weight:bold}footer{text-align:center;font-size:11px;color:#999;margin-top:30px;padding-top:12px;border-top:1px solid #eee}</style></head><body>';
   h+='<h1>Egypt + Umrah 2026 — Trip Itinerary</h1><h2>8 adults from Charlotte, NC · Jun 21 – Jul 12, 2026</h2>';
-  ITIN.forEach((d,i)=>{if(!itinSel.has(i))return;
+  getItin().forEach((d,i)=>{if(!itinSel.has(i))return;
     h+=`<div class="day"><div class="day-h">${d.date} (${d.day}) — ${d.title}<span class="loc">${d.loc}</span></div>`;
     d.items.forEach(it=>{h+=`<div class="item ${it.t}">${it.v}</div>`});h+='</div>'});
   h+='<footer>Generated from Trip Operations Console</footer></body></html>';
@@ -1460,7 +1530,7 @@ function buildIndex(){
     else if(item.type==='gate'){const ot=item.opts.map(o=>o.if+' '+o.then).join(' ');items.push({text:[item.q,item.tag,ot].join(' '),label:item.tag+': '+item.q.slice(0,60),tab:'actions',section:p.title,elQ:'.gate',gateId:item.id,pri:2})}
   })});
   // Itinerary
-  ITIN.forEach((d,i)=>{const it=d.items.map(x=>x.v).join(' ');items.push({text:[d.date,d.day,d.title,d.loc,it].join(' '),label:d.date+' ('+d.day+'): '+d.title,tab:'itinerary',section:d.loc,elQ:'[data-idx="'+i+'"]',pri:3})});
+  getItin().forEach((d,i)=>{const it=d.items.map(x=>x.v).join(' ');items.push({text:[d.date,d.day,d.title,d.loc,it].join(' '),label:d.date+' ('+d.day+'): '+d.title,tab:'itinerary',section:d.loc,elQ:'[data-idx="'+i+'"]',pri:3})});
   // Cards
   CARDS.forEach(c=>{items.push({text:c.name+' '+c.target+' aspire citi welcome bonus',label:c.name,tab:'benefits',section:'Card Spend',elQ:'#cardsGrid',pri:1})});
   // Points
@@ -1790,7 +1860,7 @@ const TODO_STATUSES=['Not started','In progress','Done','Blocked'];
 const PRIO_COLOR={'Low':'var(--muted)','Medium':'var(--decision)','High':'var(--soon)','Urgent':'var(--critical)'};
 let _todoFilter={status:'',cat:'',sort:'due'};
 
-function itinDayOptions(sel){return '<option value="">— Itinerary day (optional) —</option>'+ITIN.map((d,i)=>`<option value="${i}"${String(sel)===String(i)?' selected':''}>${esc(d.date+' · '+d.title)}</option>`).join('')}
+function itinDayOptions(sel){return '<option value="">— Itinerary day (optional) —</option>'+getItin().map((d,i)=>`<option value="${i}"${String(sel)===String(i)?' selected':''}>${esc(d.date+' · '+d.title)}</option>`).join('')}
 function actionTaskOptions(sel){const tasks=[...document.querySelectorAll('#panel-actions .task')].map(t=>({id:t.dataset.tid,label:((t.querySelector('.t-id')?.textContent||'')+': '+(t.querySelector('.t-title')?.textContent||'')).trim().slice(0,72)})).filter(t=>t.id);return '<option value="">— Linked action (optional) —</option>'+tasks.map(t=>`<option value="${esc(t.id)}"${sel===t.id?' selected':''}>${esc(t.label)}</option>`).join('')}
 function whoOptions(sel){return '<option value="">— Who (optional) —</option>'+PURCHASERS.map(p=>`<option value="${esc(p)}"${sel===p?' selected':''}>${esc(p)}</option>`).join('')+`<option value="Everyone"${sel==='Everyone'?' selected':''}>Everyone</option>`}
 function buildTodoForm(){const m={tCat:catOptions(),tDay:itinDayOptions(),tAction:actionTaskOptions(),tWho:whoOptions()};for(const id in m){const e=document.getElementById(id);if(e&&!e.value)e.innerHTML=m[id]}}
@@ -1832,7 +1902,7 @@ function renderTodos(){
     const tags=[
       t.cat?`<span class="td-tag" style="color:${col}">● ${esc(t.cat)}</span>`:'',
       dt?`<span class="td-tag">🕑 ${esc(dt)}${t.dur?(' · '+t.dur+'m'):''}</span>`:'',
-      (t.day!==''&&t.day!=null&&ITIN[t.day])?`<span class="td-tag" title="Itinerary day">📅 ${esc(ITIN[t.day].date)}</span>`:'',
+      (t.day!==''&&t.day!=null&&getItin()[t.day])?`<span class="td-tag" title="Itinerary day">📅 ${esc(getItin()[t.day].date)}</span>`:'',
       t.action?`<span class="td-tag" title="Linked action ${esc(t.action)}">🔗 ${esc(t.action)}</span>`:'',
       t.who?`<span class="td-tag">👤 ${esc(t.who)}</span>`:''
     ].join('');
@@ -1920,7 +1990,7 @@ function dayTodoFooter(i){
   const pur=document.getElementById('ePurchaser');PURCHASERS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;pur.appendChild(o)});
   eData.customPays=_cleanCustomNames();rebuildPaySelect();rebuildRespList();rebuildDescList();
   document.getElementById('rateEGP').value=eData.rates.EGP;document.getElementById('rateSAR').value=eData.rates.SAR;
-  ITIN.forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
+  getItin().forEach((_,i)=>itinSel.add(i));renderActions();renderCards();renderItin();renderPoints();renderBenefitTx();renderBudgetGrid();renderChart();renderSummary();renderExpenses();
   tick();setInterval(tick,3600000);
   applyTheme(getThemePref());   // <head> script already set data-theme for no-flash; this sets the button icon
   document.getElementById('searchInput').addEventListener('input',onSearchInput);
