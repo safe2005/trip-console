@@ -456,6 +456,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .sel-all-lbl input{width:14px;height:14px;cursor:pointer}
 .td-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:3px}
 .nt-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:2px}
+.ben-pick{width:15px;height:15px;cursor:pointer}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -542,7 +543,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <button class="btn btn-add" onclick="addBenefitTx()">+ Add</button>
     <button class="btn btn-clear" onclick="clearBenefits()">Reset</button>
   </div>
-  <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Card</th><th>Amount</th><th>Description</th><th></th></tr></thead><tbody id="bTbody"></tbody></table></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Manual card spend — tick rows, then export →</span><label class="sel-all-lbl"><input type="checkbox" id="benSelAll" onchange="benToggleAll(this)"> all manual</label><span class="exp-sel-count" id="benSelCount">none selected</span><button class="btn-exp" onclick="exportBen('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportBen('xls')">⬇ Excel</button></div>
+  <div class="tbl-wrap"><table><thead><tr><th class="exp-pick-cell"></th><th>Date</th><th>Card</th><th>Amount</th><th>Description</th><th></th></tr></thead><tbody id="bTbody"></tbody></table></div>
 </div>
 
 <!-- ===== PANEL 3: EXPENSE TRACKER ===== -->
@@ -1267,10 +1269,10 @@ function renderBenefitTx(){
   // cardSpend(); surface them here as read-only rows so the source of each card's progress is
   // visible. (cardSpend is unchanged, so this does NOT double-count.)
   const fromExp=(eData.expenses||[]).filter(e=>{const pm=PAY_METHODS.find(p=>p.id===e.payMethod);return pm&&pm.cardId}).map(e=>{const pm=PAY_METHODS.find(p=>p.id===e.payMethod);return{date:_fmtSvcCell(e),card:pm.cardId,amount:e.usdAmount,desc:e.category+(e.desc?(' · '+e.desc):'')}});
-  if(!bData.txs.length&&!fromExp.length){tb.innerHTML='<tr><td colspan="5" class="empty">No card spend yet — add manual spend above, or log expenses paid on a card</td></tr>';return}
-  const manualRows=bData.txs.slice().reverse().map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'}</td><td><button class="del" onclick="delBTx('${t.id}')">×</button></td></tr>`});
-  const expRows=fromExp.map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr style="opacity:.85"><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'} <span style="font-size:10px;color:var(--muted)">· from Expenses</span></td><td style="font-size:10px;color:var(--muted)" title="Counts automatically from the Expenses tab — edit it there">auto</td></tr>`});
-  tb.innerHTML=manualRows.concat(expRows).join('');
+  if(!bData.txs.length&&!fromExp.length){tb.innerHTML='<tr><td colspan="6" class="empty">No card spend yet — add manual spend above, or log expenses paid on a card</td></tr>';updateBenSelCount();return}
+  const manualRows=bData.txs.slice().reverse().map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr><td class="exp-pick-cell"><input type="checkbox" class="ben-pick" data-id="${t.id}" onchange="updateBenSelCount()"></td><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'}</td><td><button class="del" onclick="delBTx('${t.id}')">×</button></td></tr>`});
+  const expRows=fromExp.map(t=>{const cn=CARDS.find(c=>c.id===t.card)?.name||t.card;return `<tr style="opacity:.85"><td class="exp-pick-cell"></td><td class="mono">${t.date}</td><td>${cn}</td><td class="mono">$${t.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td>${t.desc||'—'} <span style="font-size:10px;color:var(--muted)">· from Expenses</span></td><td style="font-size:10px;color:var(--muted)" title="Counts automatically from the Expenses tab — edit it there">auto</td></tr>`});
+  tb.innerHTML=manualRows.concat(expRows).join('');updateBenSelCount();
 }
 function addBenefitTx(){const card=document.getElementById('bCard').value,amt=parseFloat(document.getElementById('bAmt').value),desc=document.getElementById('bDesc').value.trim();if(!card||!amt||amt<=0)return;bData.txs.push({id:Date.now().toString(36),card,amount:amt,desc,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});document.getElementById('bAmt').value='';document.getElementById('bDesc').value='';renderCards();renderPoints();renderBenefitTx();saveB()}
 function delBTx(id){bData.txs=bData.txs.filter(t=>t.id!==id);renderCards();renderPoints();renderBenefitTx();saveB()}
@@ -2240,6 +2242,23 @@ function exportNotes(fmt){
   if(!rows.length){if(!confirm('No notes selected. Export ALL '+(tData.notes||[]).length+' note(s) instead?'))return;rows=(tData.notes||[]).slice()}
   const fn='egypt-notes-'+new Date().toISOString().slice(0,10);
   if(fmt==='xls')exportXLS(rows,NOTES_COLUMNS,fn,'Notes');else exportCSV(rows,NOTES_COLUMNS,fn);
+}
+
+// ---- Benefits (manual card spend) selection + export ----
+const BEN_COLUMNS=[
+  {header:'Date',key:'date',type:'text'},
+  {header:'Card',key:t=>{const c=(typeof CARDS!=='undefined'?CARDS:[]).find(c=>c.id===t.card);return c?c.name:t.card},type:'text'},
+  {header:'Amount (USD)',key:'amount',type:'currency'},
+  {header:'Description',key:'desc',type:'text'}
+];
+function benSelectedIds(){return [...document.querySelectorAll('#bTbody .ben-pick:checked')].map(c=>c.dataset.id)}
+function updateBenSelCount(){const n=benSelectedIds().length;const el=document.getElementById('benSelCount');if(el)el.textContent=n?(n+' selected'):'none selected';const all=document.querySelectorAll('#bTbody .ben-pick'),sa=document.getElementById('benSelAll');if(sa){sa.checked=all.length>0&&n===all.length;sa.indeterminate=n>0&&n<all.length}}
+function benToggleAll(cb){document.querySelectorAll('#bTbody .ben-pick').forEach(c=>{c.checked=cb.checked});updateBenSelCount()}
+function exportBen(fmt){
+  const ids=benSelectedIds();let rows=(bData.txs||[]).filter(t=>ids.includes(t.id));
+  if(!rows.length){if(!confirm('No manual rows selected. Export ALL '+(bData.txs||[]).length+' manual card-spend row(s) instead? (Auto rows from Expenses export from the Expenses tab.)'))return;rows=(bData.txs||[]).slice()}
+  const fn='egypt-card-spend-'+new Date().toISOString().slice(0,10);
+  if(fmt==='xls')exportXLS(rows,BEN_COLUMNS,fn,'Card Spend');else exportCSV(rows,BEN_COLUMNS,fn);
 }
 
 // ===================== INIT =====================
