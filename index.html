@@ -457,6 +457,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .td-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:3px}
 .nt-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:2px}
 .ben-pick{width:15px;height:15px;cursor:pointer}
+.btn-dup:hover{border-color:var(--accent2);color:var(--accent2)}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -543,7 +544,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <button class="btn btn-add" onclick="addBenefitTx()">+ Add</button>
     <button class="btn btn-clear" onclick="clearBenefits()">Reset</button>
   </div>
-  <div class="exp-export-bar"><span class="exp-sel-hint">Manual card spend — tick rows, then export →</span><label class="sel-all-lbl"><input type="checkbox" id="benSelAll" onchange="benToggleAll(this)"> all manual</label><span class="exp-sel-count" id="benSelCount">none selected</span><button class="btn-exp" onclick="exportBen('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportBen('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Manual card spend — tick rows, then export →</span><label class="sel-all-lbl"><input type="checkbox" id="benSelAll" onchange="benToggleAll(this)"> all manual</label><span class="exp-sel-count" id="benSelCount">none selected</span><button class="btn-exp btn-dup" onclick="dupBen()" title="Duplicate the checked manual rows">⧉ Copy</button><button class="btn-exp" onclick="exportBen('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportBen('xls')">⬇ Excel</button></div>
   <div class="tbl-wrap"><table><thead><tr><th class="exp-pick-cell"></th><th>Date</th><th>Card</th><th>Amount</th><th>Description</th><th></th></tr></thead><tbody id="bTbody"></tbody></table></div>
 </div>
 
@@ -601,7 +602,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
     <div class="report-summary" id="reportSummary"></div>
   </div>
-  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
   <div class="tbl-wrap"><table><thead><tr><th class="exp-pick-cell"><input type="checkbox" id="expSelAll" onchange="expToggleAll(this)" title="Select all rows"></th><th style="cursor:pointer;user-select:none" onclick="sortExp('svc','date')">Service Date <span class="sarr" id="sarr-svc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('purchaser','text')">Purchaser <span class="sarr" id="sarr-purchaser" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('responsible','text')">Responsible <span class="sarr" id="sarr-responsible" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('payName','text')">Payment <span class="sarr" id="sarr-payName" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('category','text')">Category <span class="sarr" id="sarr-category" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('currency','text')">Cur <span class="sarr" id="sarr-currency" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('amount','num')">Amount <span class="sarr" id="sarr-amount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('usdAmount','num')">USD <span class="sarr" id="sarr-usdAmount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('desc','text')">Description <span class="sarr" id="sarr-desc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('dueDate','date')">Due <span class="sarr" id="sarr-dueDate" style="font-size:9px;opacity:.7"></span></th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
   <div class="section-title">Import from Card CSV</div>
   <div class="report-box">
@@ -691,7 +692,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="tfCat" onchange="setTodoFilter('cat',this.value)"><option value="">All categories</option></select>
     <select id="tfSort" onchange="setTodoFilter('sort',this.value)"><option value="due">Sort: due date</option><option value="prio">Sort: priority</option><option value="created">Sort: newest</option></select>
   </div>
-  <div class="exp-export-bar"><label class="sel-all-lbl"><input type="checkbox" id="todoSelAll" onchange="todoToggleAll(this)"> select all</label><span class="exp-sel-count" id="todoSelCount">none selected</span><button class="btn-exp" onclick="exportTodos('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportTodos('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><label class="sel-all-lbl"><input type="checkbox" id="todoSelAll" onchange="todoToggleAll(this)"> select all</label><span class="exp-sel-count" id="todoSelCount">none selected</span><button class="btn-exp btn-dup" onclick="dupTodos()" title="Duplicate the checked to-dos">⧉ Copy</button><button class="btn-exp" onclick="exportTodos('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportTodos('xls')">⬇ Excel</button></div>
   <div id="todoList" class="todo-list"></div>
 </div>
 
@@ -717,7 +718,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="nfCtx" onchange="setNoteFilter('ctx',this.value)"><option value="">All contexts</option><option value="general">General</option><option value="expenses">Expenses</option><option value="itinerary">Itinerary</option><option value="todo">To-Do</option><option value="calendar">Calendar</option><option value="benefits">Benefits</option><option value="reference">Reference</option></select>
     <select id="nfCat" onchange="setNoteFilter('cat',this.value)"><option value="">All categories</option></select>
   </div>
-  <div class="exp-export-bar"><label class="sel-all-lbl"><input type="checkbox" id="notesSelAll" onchange="notesToggleAll(this)"> select all</label><span class="exp-sel-count" id="notesSelCount">none selected</span><button class="btn-exp" onclick="exportNotes('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportNotes('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><label class="sel-all-lbl"><input type="checkbox" id="notesSelAll" onchange="notesToggleAll(this)"> select all</label><span class="exp-sel-count" id="notesSelCount">none selected</span><button class="btn-exp btn-dup" onclick="dupNotes()" title="Duplicate the checked notes">⧉ Copy</button><button class="btn-exp" onclick="exportNotes('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportNotes('xls')">⬇ Excel</button></div>
   <div id="notesList" class="notes-list"></div>
 </div>
 
@@ -2259,6 +2260,28 @@ function exportBen(fmt){
   if(!rows.length){if(!confirm('No manual rows selected. Export ALL '+(bData.txs||[]).length+' manual card-spend row(s) instead? (Auto rows from Expenses export from the Expenses tab.)'))return;rows=(bData.txs||[]).slice()}
   const fn='egypt-card-spend-'+new Date().toISOString().slice(0,10);
   if(fmt==='xls')exportXLS(rows,BEN_COLUMNS,fn,'Card Spend');else exportCSV(rows,BEN_COLUMNS,fn);
+}
+
+// ===================== DUPLICATE SELECTED (in-place) =====================
+function dupExpenses(){
+  const ids=expSelectedIds();if(!ids.length){alert('Tick one or more rows to duplicate.');return}
+  eData.expenses.filter(e=>ids.includes(e.id)).forEach(e=>{eData.expenses.push({...e,id:_uid(),desc:(e.desc?e.desc+' ':'')+'(copy)'})});
+  renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE();
+}
+function dupTodos(){
+  const ids=todoSelectedIds();if(!ids.length){alert('Tick one or more to-dos to duplicate.');return}
+  (tData.todos||[]).filter(t=>ids.includes(t.id)).forEach(t=>{tData.todos.push({...t,id:_uid(),title:(t.title||'')+' (copy)',created:Date.now()})});
+  saveT();renderTodos();if(_rendered.has('itinerary'))renderItin();
+}
+function dupNotes(){
+  const ids=notesSelectedIds();if(!ids.length){alert('Tick one or more notes to duplicate.');return}
+  (tData.notes||[]).filter(n=>ids.includes(n.id)).forEach(n=>{tData.notes.push({...n,id:_uid(),title:(n.title||'')+' (copy)',created:Date.now(),updated:Date.now()})});
+  saveT();renderNotes();if(_rendered.has('itinerary'))renderItin();
+}
+function dupBen(){
+  const ids=benSelectedIds();if(!ids.length){alert('Tick one or more manual rows to duplicate.');return}
+  (bData.txs||[]).filter(t=>ids.includes(t.id)).forEach(t=>{bData.txs.push({...t,id:_uid(),desc:(t.desc?t.desc+' ':'')+'(copy)'})});
+  renderCards();renderPoints();renderBenefitTx();saveB();
 }
 
 // ===================== INIT =====================
