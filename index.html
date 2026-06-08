@@ -455,6 +455,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .sel-all-lbl{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);cursor:pointer}
 .sel-all-lbl input{width:14px;height:14px;cursor:pointer}
 .td-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:3px}
+.nt-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:2px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -714,6 +715,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="nfCtx" onchange="setNoteFilter('ctx',this.value)"><option value="">All contexts</option><option value="general">General</option><option value="expenses">Expenses</option><option value="itinerary">Itinerary</option><option value="todo">To-Do</option><option value="calendar">Calendar</option><option value="benefits">Benefits</option><option value="reference">Reference</option></select>
     <select id="nfCat" onchange="setNoteFilter('cat',this.value)"><option value="">All categories</option></select>
   </div>
+  <div class="exp-export-bar"><label class="sel-all-lbl"><input type="checkbox" id="notesSelAll" onchange="notesToggleAll(this)"> select all</label><span class="exp-sel-count" id="notesSelCount">none selected</span><button class="btn-exp" onclick="exportNotes('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportNotes('xls')">⬇ Excel</button></div>
   <div id="notesList" class="notes-list"></div>
 </div>
 
@@ -2013,14 +2015,14 @@ function renderNotes(){
   if(_noteFilter.cat)list=list.filter(n=>n.cat===_noteFilter.cat);
   list.sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||b.updated-a.updated);
   const st=document.getElementById('notesStat');if(st)st.textContent=tData.notes.length+' note'+(tData.notes.length===1?'':'s');
-  if(!list.length){box.innerHTML='<div class="empty-note">No notes'+((_noteFilter.ctx||_noteFilter.cat)?' match the filter.':' yet — add one above.')+'</div>';return}
+  if(!list.length){box.innerHTML='<div class="empty-note">No notes'+((_noteFilter.ctx||_noteFilter.cat)?' match the filter.':' yet — add one above.')+'</div>';updateNotesSelCount();return}
   box.innerHTML=list.map(n=>{const col=catColor(n.cat);
     return `<div class="note-card"${n.cat?` style="border-top:3px solid ${col}"`:''}>
-      <div class="note-head"><span class="note-title">${n.pin?'📌 ':''}${esc(n.title||'(untitled)')}</span>
+      <div class="note-head"><input type="checkbox" class="nt-pick" data-id="${n.id}" onchange="updateNotesSelCount()" title="Select for export"><span class="note-title">${n.pin?'📌 ':''}${esc(n.title||'(untitled)')}</span>
         <div class="note-actions"><button onclick="togglePin('${n.id}')" title="${n.pin?'Unpin':'Pin'}">${n.pin?'📌':'📍'}</button><button onclick="editNote('${n.id}')" title="Edit">✎</button><button onclick="delNote('${n.id}')" title="Delete">🗑</button></div></div>
       ${n.body?`<div class="note-body">${esc(n.body)}</div>`:''}
       <div class="note-tags"><span class="td-tag">🗂 ${esc(ctxLabel(n.ctx))}</span>${n.cat?`<span class="td-tag" style="color:${col}">● ${esc(n.cat)}</span>`:''}</div>
-    </div>`;}).join('');
+    </div>`;}).join('');updateNotesSelCount();
 }
 
 // ---- Itinerary integration: linked to-dos shown under each day ----
@@ -2220,6 +2222,24 @@ function exportTodos(fmt){
   if(!rows.length){if(!confirm('No to-dos selected. Export ALL '+(tData.todos||[]).length+' to-do(s) instead?'))return;rows=(tData.todos||[]).slice()}
   const fn='egypt-todos-'+new Date().toISOString().slice(0,10);
   if(fmt==='xls')exportXLS(rows,TODO_COLUMNS,fn,'To-Do');else exportCSV(rows,TODO_COLUMNS,fn);
+}
+
+// ---- Notes selection + export ----
+const NOTES_COLUMNS=[
+  {header:'Title',key:'title',type:'text'},
+  {header:'Body',key:'body',type:'text'},
+  {header:'Category',key:'cat',type:'text'},
+  {header:'Context',key:n=>ctxLabel(n.ctx),type:'text'},
+  {header:'Pinned',key:n=>n.pin?'Yes':'',type:'text'}
+];
+function notesSelectedIds(){return [...document.querySelectorAll('#notesList .nt-pick:checked')].map(c=>c.dataset.id)}
+function updateNotesSelCount(){const n=notesSelectedIds().length;const el=document.getElementById('notesSelCount');if(el)el.textContent=n?(n+' selected'):'none selected';const all=document.querySelectorAll('#notesList .nt-pick'),sa=document.getElementById('notesSelAll');if(sa){sa.checked=all.length>0&&n===all.length;sa.indeterminate=n>0&&n<all.length}}
+function notesToggleAll(cb){document.querySelectorAll('#notesList .nt-pick').forEach(c=>{c.checked=cb.checked});updateNotesSelCount()}
+function exportNotes(fmt){
+  const ids=notesSelectedIds();let rows=(tData.notes||[]).filter(n=>ids.includes(n.id));
+  if(!rows.length){if(!confirm('No notes selected. Export ALL '+(tData.notes||[]).length+' note(s) instead?'))return;rows=(tData.notes||[]).slice()}
+  const fn='egypt-notes-'+new Date().toISOString().slice(0,10);
+  if(fmt==='xls')exportXLS(rows,NOTES_COLUMNS,fn,'Notes');else exportCSV(rows,NOTES_COLUMNS,fn);
 }
 
 // ===================== INIT =====================
