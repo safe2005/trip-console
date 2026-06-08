@@ -452,6 +452,9 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .share-link:hover{border-color:var(--accent);color:var(--accent)}
 .share-note{font-size:10.5px;color:var(--faint);line-height:1.45}
 .shared-banner{background:var(--ok-bg);border:1px solid var(--accent);color:var(--text);border-radius:10px;padding:9px 13px;margin:12px 0;font-size:12.5px;font-weight:500}
+.sel-all-lbl{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);cursor:pointer}
+.sel-all-lbl input{width:14px;height:14px;cursor:pointer}
+.td-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:3px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -685,6 +688,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <select id="tfCat" onchange="setTodoFilter('cat',this.value)"><option value="">All categories</option></select>
     <select id="tfSort" onchange="setTodoFilter('sort',this.value)"><option value="due">Sort: due date</option><option value="prio">Sort: priority</option><option value="created">Sort: newest</option></select>
   </div>
+  <div class="exp-export-bar"><label class="sel-all-lbl"><input type="checkbox" id="todoSelAll" onchange="todoToggleAll(this)"> select all</label><span class="exp-sel-count" id="todoSelCount">none selected</span><button class="btn-exp" onclick="exportTodos('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportTodos('xls')">⬇ Excel</button></div>
   <div id="todoList" class="todo-list"></div>
 </div>
 
@@ -1958,7 +1962,7 @@ function renderTodos(){
   list.sort((a,b)=>{if(_todoFilter.sort==='prio')return _prioRank(b.prio)-_prioRank(a.prio);if(_todoFilter.sort==='created')return b.created-a.created;const ad=(a.date||'9999-99')+(a.time||'99:99'),bd=(b.date||'9999-99')+(b.time||'99:99');return ad<bd?-1:ad>bd?1:0});
   const open=tData.todos.filter(t=>t.status!=='Done').length;
   const st=document.getElementById('todoStat');if(st)st.textContent=tData.todos.length+' total · '+open+' open';
-  if(!list.length){box.innerHTML='<div class="empty-note">No to-dos'+((_todoFilter.status||_todoFilter.cat)?' match the filter.':' yet — add one above.')+'</div>';return}
+  if(!list.length){box.innerHTML='<div class="empty-note">No to-dos'+((_todoFilter.status||_todoFilter.cat)?' match the filter.':' yet — add one above.')+'</div>';updateTodoSelCount();return}
   box.innerHTML=list.map(t=>{
     const done=t.status==='Done',col=catColor(t.cat);
     const dt=[t.date,t.time].filter(Boolean).join(' ');
@@ -1970,12 +1974,13 @@ function renderTodos(){
       t.who?`<span class="td-tag">👤 ${esc(t.who)}</span>`:''
     ].join('');
     return `<div class="td-item${done?' td-done':''}" style="border-left:3px solid ${col}">
+      <input type="checkbox" class="td-pick" data-id="${t.id}" onchange="updateTodoSelCount()" title="Select for export">
       <div class="td-check" onclick="toggleTodoDone('${t.id}')">${done?'<svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg>':''}</div>
       <div class="td-body"><div class="td-top"><span class="td-title">${esc(t.title)}</span><span class="td-prio" style="color:${PRIO_COLOR[t.prio]||'var(--muted)'}">${esc(t.prio)}</span><span class="td-status">${esc(t.status)}</span></div>
         <div class="td-tags">${tags}</div>${t.note?`<div class="td-note">${esc(t.note)}</div>`:''}</div>
       <div class="td-actions"><button onclick="editTodo('${t.id}')" title="Edit">✎</button><button onclick="delTodo('${t.id}')" title="Delete">🗑</button></div>
     </div>`;
-  }).join('');
+  }).join('');updateTodoSelCount();
 }
 
 // ===================== NOTES =====================
@@ -2192,6 +2197,30 @@ function renderSharedCalendar(){
   calTripStart();
 }
 function detectSharedCalendar(){try{const h=location.hash||'';const i=h.indexOf('cal=');if(i>=0){_shared=JSON.parse(decodeURIComponent(escape(atob(h.slice(i+4)))))}}catch(e){_shared=null}return !!_shared}
+
+// ---- To-Do selection + export ----
+const TODO_COLUMNS=[
+  {header:'Title',key:'title',type:'text'},
+  {header:'Category',key:'cat',type:'text'},
+  {header:'Priority',key:'prio',type:'text'},
+  {header:'Status',key:'status',type:'text'},
+  {header:'Date',key:'date',type:'date'},
+  {header:'Time',key:'time',type:'text'},
+  {header:'Duration (min)',key:'dur',type:'number'},
+  {header:'Linked Day',key:t=>(t.day!==''&&t.day!=null&&getItin()[t.day])?getItin()[t.day].date:'',type:'text'},
+  {header:'Linked Action',key:'action',type:'text'},
+  {header:'Assignee',key:'who',type:'text'},
+  {header:'Note',key:'note',type:'text'}
+];
+function todoSelectedIds(){return [...document.querySelectorAll('#todoList .td-pick:checked')].map(c=>c.dataset.id)}
+function updateTodoSelCount(){const n=todoSelectedIds().length;const el=document.getElementById('todoSelCount');if(el)el.textContent=n?(n+' selected'):'none selected';const all=document.querySelectorAll('#todoList .td-pick'),sa=document.getElementById('todoSelAll');if(sa){sa.checked=all.length>0&&n===all.length;sa.indeterminate=n>0&&n<all.length}}
+function todoToggleAll(cb){document.querySelectorAll('#todoList .td-pick').forEach(c=>{c.checked=cb.checked});updateTodoSelCount()}
+function exportTodos(fmt){
+  const ids=todoSelectedIds();let rows=(tData.todos||[]).filter(t=>ids.includes(t.id));
+  if(!rows.length){if(!confirm('No to-dos selected. Export ALL '+(tData.todos||[]).length+' to-do(s) instead?'))return;rows=(tData.todos||[]).slice()}
+  const fn='egypt-todos-'+new Date().toISOString().slice(0,10);
+  if(fmt==='xls')exportXLS(rows,TODO_COLUMNS,fn,'To-Do');else exportCSV(rows,TODO_COLUMNS,fn);
+}
 
 // ===================== INIT =====================
 (async function(){
