@@ -462,6 +462,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .bulk-edit-wrap{display:none;border:1px solid var(--accent);border-radius:12px;padding:13px;margin:10px 0 14px;background:var(--surface)}
 .bulk-edit-wrap.show{display:block}
 .bulk-edit-title{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.04em;color:var(--accent);margin-bottom:10px}
+.cat-link{cursor:pointer}
+.cat-link:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -588,7 +590,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <span class="editing-badge" id="expEditBadge">✎ Editing</span>
     <button class="btn btn-clear" onclick="clearExpenses()">Reset</button>
   </div>
-  <div class="section-title">Report & Filter</div>
+  <div class="section-title" id="reportFilterTitle">Report & Filter</div>
   <div class="report-box">
     <div class="report-row">
       <label>Category</label><select id="rfCat"><option value="all">All</option></select>
@@ -1309,14 +1311,14 @@ function catSpend(c){return eData.expenses.filter(e=>e.category===c).reduce((s,e
 function totalSpend(){return eData.expenses.reduce((s,e)=>s+e.usdAmount,0)}
 function totalBudget(){return Object.values(eData.budgets).reduce((s,v)=>s+v,0)}
 function renderSummary(){const sp=totalSpend(),bd=totalBudget(),rm=bd-sp,ov=rm<0;document.getElementById('expSummary').innerHTML=`<div class="sum-item"><div class="sum-val">$${Math.round(bd).toLocaleString()}</div><div class="sum-lbl">Total Budget</div></div><div class="sum-item"><div class="sum-val">$${Math.round(sp).toLocaleString()}</div><div class="sum-lbl">Total Spent</div></div><div class="sum-item ${ov?'over':'under'}"><div class="sum-val">${ov?'-':''}$${Math.abs(Math.round(rm)).toLocaleString()}</div><div class="sum-lbl">${ov?'Over Budget':'Remaining'}</div></div>`}
-function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{const isCustom=!CATEGORIES.includes(c);const del=isCustom?`<button class="bud-del" data-delcat="${c}">×</button>`:'';g.innerHTML+=`<div class="bud-item"><label>${c}${del}</label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delCustomCat(b.dataset.delcat))}
+function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{const isCustom=!CATEGORIES.includes(c);const del=isCustom?`<button class="bud-del" data-delcat="${c}">×</button>`:'';g.innerHTML+=`<div class="bud-item"><label><span class="cat-link" data-fcat="${c}">${c}</span>${del}</label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delCustomCat(b.dataset.delcat));g.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
 
 function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in this category will keep their label but the budget line will be removed.'))return;
   eData.customCats=(eData.customCats||[]).filter(c=>c!==cat);delete eData.budgets[cat];
   rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();saveE()}
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
 function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
-function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
+function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label cat-link" data-fcat="${c}">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`});area.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
 // --- Report sorting (typed: date / dollar / text) ---
 let _expSort={key:null,type:null,dir:1};   // dir 1=ascending, -1=descending
 function _svcOf(e){return e.svcDate||e.date||''}
@@ -2341,6 +2343,15 @@ function applyBulkEdit(){
   renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();
 }
 
+// ---- Click a budget/chart category -> jump to Report & Filter, filtered to it ----
+function filterByCategory(cat){
+  const rc=document.getElementById('rfCat');
+  if(rc){if(![...rc.options].some(o=>o.value===cat)){const o=document.createElement('option');o.value=cat;o.textContent=cat;rc.appendChild(o)}rc.value=cat;}
+  ['rfPur','rfPay','rfCur','rfDue'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='all'});
+  const s=document.getElementById('rfSearch');if(s)s.value='';
+  applyReport();
+  const t=document.getElementById('reportFilterTitle');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+}
 // ===================== INIT =====================
 (async function(){
   // Low Data Mode decision (before fonts load)
