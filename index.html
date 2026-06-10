@@ -458,6 +458,10 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .nt-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:2px}
 .ben-pick{width:15px;height:15px;cursor:pointer}
 .btn-dup:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-bulk:hover{border-color:var(--accent);color:var(--accent)}
+.bulk-edit-wrap{display:none;border:1px solid var(--accent);border-radius:12px;padding:13px;margin:10px 0 14px;background:var(--surface)}
+.bulk-edit-wrap.show{display:block}
+.bulk-edit-title{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.04em;color:var(--accent);margin-bottom:10px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
@@ -602,7 +606,27 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
     <div class="report-summary" id="reportSummary"></div>
   </div>
-  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-bulk" onclick="bulkEditExpenses()" title="Edit all checked rows at once">✎ Bulk edit</button><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="bulk-edit-wrap" id="bulkEditWrap">
+    <div class="bulk-edit-title">Bulk edit <span id="bulkEditCount">0</span> selected — fill only the fields you want to change; blank fields are left as-is</div>
+    <div class="form-row2">
+      <select id="beCat"></select>
+      <select id="beCur"><option value="">Currency — leave unchanged</option><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
+      <input type="number" id="beAmt" placeholder="Amount (unchanged)" min="0" step="0.01">
+      <input type="text" id="beDesc" placeholder="Description (unchanged)">
+    </div>
+    <div class="form-row2">
+      <select id="bePurchaser"></select>
+      <input type="text" id="beResp" list="respList" placeholder="Responsible (unchanged)">
+      <select id="bePay"></select>
+    </div>
+    <div class="form-row2">
+      <label class="fld"><span class="fld-l">Service date</span><input type="date" id="beSvc"></label>
+      <label class="fld"><span class="fld-l">Due date</span><input type="date" id="beDue"></label>
+      <button class="btn-add" onclick="applyBulkEdit()">Apply to selected</button>
+      <button class="btn-clear" onclick="cancelBulkEdit()">Cancel</button>
+    </div>
+  </div>
   <div class="tbl-wrap"><table><thead><tr><th class="exp-pick-cell"><input type="checkbox" id="expSelAll" onchange="expToggleAll(this)" title="Select all rows"></th><th style="cursor:pointer;user-select:none" onclick="sortExp('svc','date')">Service Date <span class="sarr" id="sarr-svc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('purchaser','text')">Purchaser <span class="sarr" id="sarr-purchaser" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('responsible','text')">Responsible <span class="sarr" id="sarr-responsible" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('payName','text')">Payment <span class="sarr" id="sarr-payName" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('category','text')">Category <span class="sarr" id="sarr-category" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('currency','text')">Cur <span class="sarr" id="sarr-currency" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('amount','num')">Amount <span class="sarr" id="sarr-amount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('usdAmount','num')">USD <span class="sarr" id="sarr-usdAmount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('desc','text')">Description <span class="sarr" id="sarr-desc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('dueDate','date')">Due <span class="sarr" id="sarr-dueDate" style="font-size:9px;opacity:.7"></span></th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
   <div class="section-title">Import from Card CSV</div>
   <div class="report-box">
@@ -2282,6 +2306,39 @@ function dupBen(){
   const ids=benSelectedIds();if(!ids.length){alert('Tick one or more manual rows to duplicate.');return}
   (bData.txs||[]).filter(t=>ids.includes(t.id)).forEach(t=>{bData.txs.push({...t,id:_uid(),desc:(t.desc?t.desc+' ':'')+'(copy)'})});
   renderCards();renderPoints();renderBenefitTx();saveB();
+}
+
+// ===================== BULK EDIT (Expenses) =====================
+function bulkEditExpenses(){
+  const ids=expSelectedIds();if(!ids.length){alert('Tick one or more rows to bulk edit.');return}
+  const cat=document.getElementById('beCat');cat.innerHTML='<option value="">Category — leave unchanged</option>'+allCats().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  const pur=document.getElementById('bePurchaser');pur.innerHTML='<option value="">Purchaser — leave unchanged</option>'+PURCHASERS.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  const pay=document.getElementById('bePay');pay.innerHTML='<option value="">Payment — leave unchanged</option>'+allPays().map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  ['beCur','beAmt','beDesc','beResp','beSvc','beDue'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('bulkEditCount').textContent=ids.length;
+  const w=document.getElementById('bulkEditWrap');w.classList.add('show');w.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function cancelBulkEdit(){const w=document.getElementById('bulkEditWrap');if(w)w.classList.remove('show')}
+function applyBulkEdit(){
+  const ids=expSelectedIds();if(!ids.length){alert('No rows selected.');cancelBulkEdit();return}
+  const v=id=>{const el=document.getElementById(id);return el?el.value:''};
+  const ch={};
+  const cat=v('beCat');if(cat)ch.category=cat;
+  const cur=v('beCur');if(cur)ch.currency=cur;
+  const amtRaw=v('beAmt'),amt=parseFloat(amtRaw);if(amtRaw!==''&&!isNaN(amt)&&amt>0)ch.amount=amt;
+  const desc=v('beDesc');if(desc.trim()!=='')ch.desc=desc.trim();
+  const pur=v('bePurchaser');if(pur)ch.purchaser=pur;
+  const payId=v('bePay');if(payId){const pm=allPays().find(p=>p.id===payId);ch.payMethod=payId;ch.payName=pm?pm.name:payId}
+  const resp=v('beResp');if(resp.trim()!=='')ch.responsible=resp.trim();
+  const svc=v('beSvc');if(svc)ch.svcDate=svc;
+  const due=v('beDue');if(due)ch.dueDate=due;
+  const keys=Object.keys(ch);
+  if(!keys.length){alert('Fill in at least one field to change. Empty fields are left as-is.');return}
+  if(!confirm('Apply '+keys.length+' field change'+(keys.length>1?'s':'')+' to '+ids.length+' selected expense'+(ids.length>1?'s':'')+'?'))return;
+  const idset=new Set(ids);
+  eData.expenses.forEach(e=>{if(!idset.has(e.id))return;Object.assign(e,ch);if('amount' in ch||'currency' in ch){e.usdAmount=Math.round(toUSD(e.amount,e.currency)*100)/100}});
+  saveE();cancelBulkEdit();
+  renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();
 }
 
 // ===================== INIT =====================
