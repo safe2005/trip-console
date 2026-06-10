@@ -311,6 +311,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .custom-cat-wrap.show{display:flex}
 .custom-cat-wrap input{flex:1;min-width:140px}
 .bud-del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:13px;padding:0 4px;margin-left:4px;transition:.15s}
+.bud-ren{background:none;border:none;color:var(--faint);cursor:pointer;font-size:11px;padding:0 2px;margin-left:6px;transition:.15s}
+.bud-ren:hover{color:var(--accent)}
 .bud-del:hover{color:var(--critical)}
 
 
@@ -1059,7 +1061,7 @@ async function connectGist(){
     if(!aState.tasks)aState.tasks={};if(!aState.gates)aState.gates={};
     if(!bData.txs)bData.txs=[];if(!eData.expenses)eData.expenses=[];
     if(!eData.budgets)eData.budgets={...DEF_BUDGETS};if(!eData.rates)eData.rates={...DEF_RATES};
-    if(!eData.customCats)eData.customCats=[];if(!eData.customPays)eData.customPays=[];if(!pData.balances)pData.balances={};
+    if(!eData.cats)eData.cats=[...__CAT_SEED];if(!eData.customPays)eData.customPays=[];if(!pData.balances)pData.balances={};
     if(_chg)await _gistSave();   // push reconciled offline edits up to the cloud
     _clearPending();
   } else {
@@ -1096,7 +1098,7 @@ const CARDS=[
   {id:'aspire4',name:'Amex Aspire — Traveler 4',target:5000,color:'#54b27a'},
   {id:'citi',name:'Citi AA Executive — Traveler 1',target:6000,color:'#5fa0db'},
 ];
-const CATEGORIES=['Flights (AA/BA)','Regional Flights','Hotels','Transport','Visas & Vaccines','Activities & Excursions','Food & Beverage','Insurance','Shopping & Misc'];
+const __CAT_SEED=['Flights (AA/BA)','Regional Flights','Hotels','Transport','Visas & Vaccines','Activities & Excursions','Food & Beverage','Insurance','Shopping & Misc'];
 
 
 const PURCHASERS=['Traveler 1','Traveler 2','Traveler 3','Traveler 4','Adult 5','Adult 6','Adult 7','Adult 8'];
@@ -1138,7 +1140,7 @@ function _fillDatalist(id,vals){const dl=document.getElementById(id);if(!dl)retu
 function rebuildRespList(){_fillDatalist('respList',_distinct('responsible'))}
 function rebuildDescList(){_fillDatalist('descList',_distinct('desc',48))}
 
-function allCats(){return [...CATEGORIES,...(eData.customCats||[])]}
+function allCats(){return eData.cats||[...__CAT_SEED]}
 function onCatChange(){document.getElementById('customCatWrap').classList.toggle('show',document.getElementById('eCat').value==='__other__')}
 function rebuildCatSelects(){
   const es=document.getElementById('eCat');
@@ -1153,7 +1155,7 @@ const DEF_BUDGETS={'Flights (AA/BA)':10000,'Regional Flights':4000,'Hotels':5000
 const DEF_RATES={EGP:52,SAR:3.75};
 
 // ===================== STATE =====================
-let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},customCats:[],customPays:[]};
+let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},cats:[...__CAT_SEED],customCats:[],customPays:[]};
 let tData={todos:[],notes:[],cats:[]};
 let filter='all', memOnly=false;
 function ss(t){document.getElementById('saveState').textContent='storage: '+t}
@@ -1173,7 +1175,7 @@ async function loadAll(){
   if(!tData.todos)tData.todos=[]; if(!tData.notes)tData.notes=[]; if(!tData.cats)tData.cats=[];
   seedItin();
   if(!eData.budgets)eData.budgets={...DEF_BUDGETS}; if(!eData.rates)eData.rates={...DEF_RATES};
-  if(!eData.customCats)eData.customCats=[];if(!eData.customPays)eData.customPays=[];CATEGORIES.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});(eData.customCats||[]).forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=0});
+  if(!eData.customPays)eData.customPays=[];if(!eData.cats){eData.cats=[...__CAT_SEED,...(eData.customCats||[]).filter(c=>!__CAT_SEED.includes(c))]}eData.cats.forEach(c=>{if(eData.budgets[c]===undefined)eData.budgets[c]=DEF_BUDGETS[c]||0});
 }
 async function saveA(){try{await sSet(A_KEY,JSON.stringify(aState))}catch(e){}}
 async function saveB(){try{await sSet(B_KEY,JSON.stringify(bData))}catch(e){}}
@@ -1337,11 +1339,17 @@ function catSpend(c){return eData.expenses.filter(e=>e.category===c).reduce((s,e
 function totalSpend(){return eData.expenses.reduce((s,e)=>s+e.usdAmount,0)}
 function totalBudget(){return Object.values(eData.budgets).reduce((s,v)=>s+v,0)}
 function renderSummary(){const sp=totalSpend(),bd=totalBudget(),rm=bd-sp,ov=rm<0;document.getElementById('expSummary').innerHTML=`<div class="sum-item"><div class="sum-val">$${Math.round(bd).toLocaleString()}</div><div class="sum-lbl">Total Budget</div></div><div class="sum-item"><div class="sum-val">$${Math.round(sp).toLocaleString()}</div><div class="sum-lbl">Total Spent</div></div><div class="sum-item ${ov?'over':'under'}"><div class="sum-val">${ov?'-':''}$${Math.abs(Math.round(rm)).toLocaleString()}</div><div class="sum-lbl">${ov?'Over Budget':'Remaining'}</div></div>`}
-function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{const isCustom=!CATEGORIES.includes(c);const del=isCustom?`<button class="bud-del" data-delcat="${c}">×</button>`:'';g.innerHTML+=`<div class="bud-item"><label><span class="cat-link" data-fcat="${c}">${c}</span>${del}</label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delCustomCat(b.dataset.delcat));g.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
+function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{g.innerHTML+=`<div class="bud-item"><label><span class="cat-link" data-fcat="${c}">${c}</span><button class="bud-ren" data-rencat="${c}" title="Rename">✎</button><button class="bud-del" data-delcat="${c}" title="Delete">×</button></label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delExpCat(b.dataset.delcat));g.querySelectorAll('[data-rencat]').forEach(b=>b.onclick=()=>renameExpCat(b.dataset.rencat));g.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
 
-function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in this category will keep their label but the budget line will be removed.'))return;
-  eData.customCats=(eData.customCats||[]).filter(c=>c!==cat);delete eData.budgets[cat];
-  rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();saveE()}
+function delExpCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses already in this category will keep their label but the budget line will be removed.'))return;
+  eData.cats=(eData.cats||[]).filter(c=>c!==cat);delete eData.budgets[cat];
+  rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();saveE()}
+function renameExpCat(old){const nw=prompt('Rename category "'+old+'" to:',old);if(!nw||!nw.trim()||nw.trim()===old)return;const name=nw.trim();
+  if(allCats().includes(name)){alert('A category named "'+name+'" already exists.');return}
+  const idx=(eData.cats||[]).indexOf(old);if(idx!==-1)eData.cats[idx]=name;
+  if(eData.budgets[old]!==undefined){eData.budgets[name]=eData.budgets[old];delete eData.budgets[old]}
+  eData.expenses.forEach(e=>{if(e.category===old)e.category=name});
+  rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();buildReportSelects();saveE()}
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
 function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||52;eData.rates.SAR=3.75;document.getElementById('rateSAR').value=3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();updateUsdPreview();saveE()}
 function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label cat-link" data-fcat="${c}">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`});area.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
@@ -1380,7 +1388,7 @@ function addExpense(){let cat=document.getElementById('eCat').value;const cur=do
     document.getElementById('ePayOther').value='';document.getElementById('payOtherWrap').classList.remove('show');document.getElementById('ePay').value=''}
   else{const pm=allPays().find(p=>p.id===payId);payName=pm?pm.name:payId}
   if(cat==='__other__'){cat=document.getElementById('eCustomCat').value.trim();if(!cat){alert('Enter a category name');return}
-    if(!eData.customCats)eData.customCats=[];if(!eData.customCats.includes(cat)&&!CATEGORIES.includes(cat)){eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
+    if(!eData.cats)eData.cats=[...__CAT_SEED];if(!eData.cats.includes(cat)){eData.cats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0;rebuildCatSelects();renderBudgetGrid()}
     document.getElementById('eCustomCat').value='';document.getElementById('eCat').value=cat;document.getElementById('customCatWrap').classList.remove('show')}
   if(!cat||!amt||amt<=0)return;const usd=toUSD(amt,cur);const svcDate=document.getElementById('eSvc').value||'';const resp=document.getElementById('eResp').value.trim();if(_editingExpId){
     const idx=eData.expenses.findIndex(x=>x.id===_editingExpId);
@@ -1390,7 +1398,7 @@ function addExpense(){let cat=document.getElementById('eCat').value;const cur=do
     const dueDate=document.getElementById('eDue').value||'';eData.expenses.push({id:Date.now().toString(36),category:cat,currency:cur,amount:amt,usdAmount:Math.round(usd*100)/100,desc,purchaser:purchaser,payMethod:payId,payName:payName,dueDate:dueDate,svcDate:svcDate,responsible:resp,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
   }document.getElementById('eAmt').value='';document.getElementById('eDesc').value='';document.getElementById('eDue').value='';document.getElementById('eSvc').value='';document.getElementById('eResp').value='';renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 function delExp(id){if(_editingExpId===id)cancelEdit();eData.expenses=eData.expenses.filter(e=>e.id!==id);renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
-function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES}};document.getElementById('rateEGP').value=DEF_RATES.EGP;document.getElementById('rateSAR').value=DEF_RATES.SAR;rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
+function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},cats:[...__CAT_SEED],customCats:[],customPays:[]};document.getElementById('rateEGP').value=DEF_RATES.EGP;document.getElementById('rateSAR').value=DEF_RATES.SAR;rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
 
 
 // ===================== POINTS & MILES TRACKER =====================
@@ -1937,7 +1945,7 @@ function doImport(){
   const purch=document.getElementById('impPurch').value;
   const idxs=[...document.querySelectorAll('.imp-row:checked')].map(c=>parseInt(c.dataset.idx,10));
   if(!idxs.length){alert('No rows selected to import.');return}
-  if(cat&&!CATEGORIES.includes(cat)&&!(eData.customCats||[]).includes(cat)){if(!eData.customCats)eData.customCats=[];eData.customCats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0}
+  if(cat&&!(eData.cats||[]).includes(cat)){if(!eData.cats)eData.cats=[...__CAT_SEED];eData.cats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0}
   const stamp=Date.now().toString(36);let added=0;
   idxs.forEach(i=>{const c=p.charges[i];if(!c)return;const iso=_csvDateToISO(c.date);
     eData.expenses.push({id:'imp'+stamp+'_'+i,category:cat,currency:'USD',amount:c.amount,usdAmount:c.amount,desc:c.desc,purchaser:purch,responsible:resp,payMethod:payId,payName:payName,dueDate:'',svcDate:iso,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});added++});
