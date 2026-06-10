@@ -153,6 +153,16 @@ tr:last-child td{border-bottom:none}
 .rate-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .rate-item input{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;width:68px;font-size:12px;padding:5px 7px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;text-align:right}
 .rate-item input:focus{border-color:var(--accent)}
+.rate-item input[readonly]{opacity:.65;cursor:not-allowed;color:var(--muted)}
+.rate-live-btn{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--accent);cursor:pointer}
+.rate-live-btn:hover{border-color:var(--accent);background:var(--surface)}
+.rate-live-btn:disabled{opacity:.5;cursor:default}
+.rate-peg{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted)}
+.rate-status{font-size:11px;color:var(--muted);margin:6px 0 2px;min-height:14px}
+.rate-status.ok{color:var(--accent)}
+.rate-status.warn{color:var(--critical)}
+.rate-status.loading{opacity:.7}
+.usd-preview{display:none;align-items:center;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--accent);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:5px 9px;white-space:nowrap}
 .summary{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
 .sum-item{text-align:center;min-width:100px}
 .sum-val{font-family:'Fraunces',Georgia,serif;font-size:24px;font-weight:600}
@@ -459,6 +469,12 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .nt-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:2px}
 .ben-pick{width:15px;height:15px;cursor:pointer}
 .btn-dup:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-bulk:hover{border-color:var(--accent);color:var(--accent)}
+.bulk-edit-wrap{display:none;border:1px solid var(--accent);border-radius:12px;padding:13px;margin:10px 0 14px;background:var(--surface)}
+.bulk-edit-wrap.show{display:block}
+.bulk-edit-title{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.04em;color:var(--accent);margin-bottom:10px}
+.cat-link{cursor:pointer}
+.cat-link:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tcrev_theme')||'dark')</script>
@@ -556,9 +572,10 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
   <div class="summary" id="expSummary"></div>
   <div class="section-title">Exchange Rates (editable)</div>
   <div class="rates-row">
-    <div class="rate-item"><span>1 USD =</span><input id="rateEGP" type="number" value="51" step="0.1" onchange="onRateChange()"><span>EGP</span></div>
-    <div class="rate-item"><span>1 USD =</span><input id="rateSAR" type="number" value="3.75" step="0.01" onchange="onRateChange()"><span>SAR</span></div>
+    <div class="rate-item"><span>1 USD =</span><input id="rateEGP" type="number" value="52" step="0.1" onchange="onRateChange()"><span>EGP</span><button type="button" class="rate-live-btn" id="egpLiveBtn" onclick="refreshEgpRate()" title="Fetch the current EGP&rarr;USD rate from the web">&#8635; Live</button></div>
+    <div class="rate-item"><span>1 USD =</span><input id="rateSAR" type="number" value="3.75" step="0.01" readonly title="The Saudi riyal is pegged to the US dollar at a fixed 3.75 (set by SAMA since 1986)"><span>SAR</span><span class="rate-peg" title="Fixed peg — not editable">pegged</span></div>
   </div>
+  <div class="rate-status" id="egpRateStatus"></div>
   <div class="section-title">Budget per Category (editable)</div>
   <div class="budget-grid" id="budgetGrid"></div>
   <div class="section-title">Spend vs Budget</div>
@@ -573,8 +590,9 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
   <div class="form-row">
     <select id="eCat" onchange="onCatChange()"></select>
     <div class="custom-cat-wrap" id="customCatWrap"><input type="text" id="eCustomCat" placeholder="Enter custom category name"></div>
-    <select id="eCur"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
-    <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01">
+    <select id="eCur" onchange="updateUsdPreview()"><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
+    <input type="number" id="eAmt" placeholder="Amount" min="0" step="0.01" oninput="updateUsdPreview()">
+    <span class="usd-preview" id="eUsdPreview"></span>
     <input type="text" id="eDesc" list="descList" placeholder="Description (optional)"><datalist id="descList"></datalist>
     <label style="font-size:10px;color:var(--muted);align-self:center">Service date</label>
     <input type="date" id="eSvc" title="Date of service — when the expense actually occurred">
@@ -585,7 +603,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <span class="editing-badge" id="expEditBadge">✎ Editing</span>
     <button class="btn btn-clear" onclick="clearExpenses()">Reset</button>
   </div>
-  <div class="section-title">Report & Filter</div>
+  <div class="section-title" id="reportFilterTitle">Report & Filter</div>
   <div class="report-box">
     <div class="report-row">
       <label>Category</label><select id="rfCat"><option value="all">All</option></select>
@@ -603,7 +621,27 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
     <div class="report-summary" id="reportSummary"></div>
   </div>
-  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-bulk" onclick="bulkEditExpenses()" title="Edit all checked rows at once">✎ Bulk edit</button><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="bulk-edit-wrap" id="bulkEditWrap">
+    <div class="bulk-edit-title">Bulk edit <span id="bulkEditCount">0</span> selected — fill only the fields you want to change; blank fields are left as-is</div>
+    <div class="form-row2">
+      <select id="beCat"></select>
+      <select id="beCur"><option value="">Currency — leave unchanged</option><option value="USD">USD</option><option value="EGP">EGP</option><option value="SAR">SAR</option></select>
+      <input type="number" id="beAmt" placeholder="Amount (unchanged)" min="0" step="0.01">
+      <input type="text" id="beDesc" placeholder="Description (unchanged)">
+    </div>
+    <div class="form-row2">
+      <select id="bePurchaser"></select>
+      <input type="text" id="beResp" list="respList" placeholder="Responsible (unchanged)">
+      <select id="bePay"></select>
+    </div>
+    <div class="form-row2">
+      <label class="fld"><span class="fld-l">Service date</span><input type="date" id="beSvc"></label>
+      <label class="fld"><span class="fld-l">Due date</span><input type="date" id="beDue"></label>
+      <button class="btn-add" onclick="applyBulkEdit()">Apply to selected</button>
+      <button class="btn-clear" onclick="cancelBulkEdit()">Cancel</button>
+    </div>
+  </div>
   <div class="tbl-wrap"><table><thead><tr><th class="exp-pick-cell"><input type="checkbox" id="expSelAll" onchange="expToggleAll(this)" title="Select all rows"></th><th style="cursor:pointer;user-select:none" onclick="sortExp('svc','date')">Service Date <span class="sarr" id="sarr-svc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('purchaser','text')">Purchaser <span class="sarr" id="sarr-purchaser" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('responsible','text')">Responsible <span class="sarr" id="sarr-responsible" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('payName','text')">Payment <span class="sarr" id="sarr-payName" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('category','text')">Category <span class="sarr" id="sarr-category" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('currency','text')">Cur <span class="sarr" id="sarr-currency" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('amount','num')">Amount <span class="sarr" id="sarr-amount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('usdAmount','num')">USD <span class="sarr" id="sarr-usdAmount" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('desc','text')">Description <span class="sarr" id="sarr-desc" style="font-size:9px;opacity:.7"></span></th><th style="cursor:pointer;user-select:none" onclick="sortExp('dueDate','date')">Due <span class="sarr" id="sarr-dueDate" style="font-size:9px;opacity:.7"></span></th><th></th></tr></thead><tbody id="eTbody"></tbody></table></div>
   <div class="section-title">Import from Card CSV</div>
   <div class="report-box">
@@ -1099,7 +1137,7 @@ function rebuildCatSelects(){
 }
 
 const DEF_BUDGETS={'Flights (AA/BA)':10000,'Regional Flights':4000,'Hotels':5000,'Transport':1000,'Visas & Vaccines':3000,'Activities & Excursions':2000,'Food & Beverage':5000,'Insurance':500,'Shopping & Misc':2000};
-const DEF_RATES={EGP:51,SAR:3.75};
+const DEF_RATES={EGP:52,SAR:3.75};
 
 // ===================== STATE =====================
 let aState={tasks:{},gates:{}}, bData={txs:[]}, eData={expenses:[],budgets:{...DEF_BUDGETS},rates:{...DEF_RATES},customCats:[],customPays:[]};
@@ -1286,14 +1324,14 @@ function catSpend(c){return eData.expenses.filter(e=>e.category===c).reduce((s,e
 function totalSpend(){return eData.expenses.reduce((s,e)=>s+e.usdAmount,0)}
 function totalBudget(){return Object.values(eData.budgets).reduce((s,v)=>s+v,0)}
 function renderSummary(){const sp=totalSpend(),bd=totalBudget(),rm=bd-sp,ov=rm<0;document.getElementById('expSummary').innerHTML=`<div class="sum-item"><div class="sum-val">$${Math.round(bd).toLocaleString()}</div><div class="sum-lbl">Total Budget</div></div><div class="sum-item"><div class="sum-val">$${Math.round(sp).toLocaleString()}</div><div class="sum-lbl">Total Spent</div></div><div class="sum-item ${ov?'over':'under'}"><div class="sum-val">${ov?'-':''}$${Math.abs(Math.round(rm)).toLocaleString()}</div><div class="sum-lbl">${ov?'Over Budget':'Remaining'}</div></div>`}
-function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{const isCustom=!CATEGORIES.includes(c);const del=isCustom?`<button class="bud-del" data-delcat="${c}">×</button>`:'';g.innerHTML+=`<div class="bud-item"><label>${c}${del}</label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delCustomCat(b.dataset.delcat))}
+function renderBudgetGrid(){const g=document.getElementById('budgetGrid');g.innerHTML='';allCats().forEach(c=>{const isCustom=!CATEGORIES.includes(c);const del=isCustom?`<button class="bud-del" data-delcat="${c}">×</button>`:'';g.innerHTML+=`<div class="bud-item"><label><span class="cat-link" data-fcat="${c}">${c}</span>${del}</label><input type="number" value="${eData.budgets[c]||0}" data-cat="${c}" onchange="onBudgetChange(this)" step="100"></div>`});g.querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>delCustomCat(b.dataset.delcat));g.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
 
 function delCustomCat(cat){if(!confirm('Remove category "'+cat+'"? Expenses in this category will keep their label but the budget line will be removed.'))return;
   eData.customCats=(eData.customCats||[]).filter(c=>c!==cat);delete eData.budgets[cat];
   rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();saveE()}
 function onBudgetChange(el){eData.budgets[el.dataset.cat]=parseFloat(el.value)||0;renderChart();renderSummary();saveE()}
-function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||51;eData.rates.SAR=parseFloat(document.getElementById('rateSAR').value)||3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE()}
-function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`})}
+function onRateChange(){eData.rates.EGP=parseFloat(document.getElementById('rateEGP').value)||52;eData.rates.SAR=3.75;document.getElementById('rateSAR').value=3.75;eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});renderChart();renderSummary();renderExpenses();renderCards();renderPoints();updateUsdPreview();saveE()}
+function renderChart(){const area=document.getElementById('chartArea');area.innerHTML='';const mx=Math.max(...allCats().map(c=>Math.max(eData.budgets[c]||0,catSpend(c))),1);allCats().forEach(c=>{const b=eData.budgets[c]||0,s=catSpend(c),bW=Math.round(b/mx*100),sW=Math.round(s/mx*100),ov=s>b&&b>0,col=ov?'var(--critical)':'var(--accent)';area.innerHTML+=`<div class="chart-row"><div class="chart-label cat-link" data-fcat="${c}">${c}</div><div class="chart-bars">${b>0?`<div style="position:absolute;left:${bW}%;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5;z-index:1"></div>`:''}<div class="chart-fill" style="width:${sW}%;background:${col}"></div></div><div class="chart-nums"><b>$${Math.round(s).toLocaleString()}</b> / $${Math.round(b).toLocaleString()}</div></div>`});area.querySelectorAll('[data-fcat]').forEach(el=>el.onclick=()=>filterByCategory(el.dataset.fcat))}
 // --- Report sorting (typed: date / dollar / text) ---
 let _expSort={key:null,type:null,dir:1};   // dir 1=ascending, -1=descending
 function _svcOf(e){return e.svcDate||e.date||''}
@@ -2285,6 +2323,82 @@ function dupBen(){
   renderCards();renderPoints();renderBenefitTx();saveB();
 }
 
+// ===================== BULK EDIT (Expenses) =====================
+function bulkEditExpenses(){
+  const ids=expSelectedIds();if(!ids.length){alert('Tick one or more rows to bulk edit.');return}
+  const cat=document.getElementById('beCat');cat.innerHTML='<option value="">Category — leave unchanged</option>'+allCats().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  const pur=document.getElementById('bePurchaser');pur.innerHTML='<option value="">Purchaser — leave unchanged</option>'+PURCHASERS.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  const pay=document.getElementById('bePay');pay.innerHTML='<option value="">Payment — leave unchanged</option>'+allPays().map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  ['beCur','beAmt','beDesc','beResp','beSvc','beDue'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('bulkEditCount').textContent=ids.length;
+  const w=document.getElementById('bulkEditWrap');w.classList.add('show');w.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function cancelBulkEdit(){const w=document.getElementById('bulkEditWrap');if(w)w.classList.remove('show')}
+function applyBulkEdit(){
+  const ids=expSelectedIds();if(!ids.length){alert('No rows selected.');cancelBulkEdit();return}
+  const v=id=>{const el=document.getElementById(id);return el?el.value:''};
+  const ch={};
+  const cat=v('beCat');if(cat)ch.category=cat;
+  const cur=v('beCur');if(cur)ch.currency=cur;
+  const amtRaw=v('beAmt'),amt=parseFloat(amtRaw);if(amtRaw!==''&&!isNaN(amt)&&amt>0)ch.amount=amt;
+  const desc=v('beDesc');if(desc.trim()!=='')ch.desc=desc.trim();
+  const pur=v('bePurchaser');if(pur)ch.purchaser=pur;
+  const payId=v('bePay');if(payId){const pm=allPays().find(p=>p.id===payId);ch.payMethod=payId;ch.payName=pm?pm.name:payId}
+  const resp=v('beResp');if(resp.trim()!=='')ch.responsible=resp.trim();
+  const svc=v('beSvc');if(svc)ch.svcDate=svc;
+  const due=v('beDue');if(due)ch.dueDate=due;
+  const keys=Object.keys(ch);
+  if(!keys.length){alert('Fill in at least one field to change. Empty fields are left as-is.');return}
+  if(!confirm('Apply '+keys.length+' field change'+(keys.length>1?'s':'')+' to '+ids.length+' selected expense'+(ids.length>1?'s':'')+'?'))return;
+  const idset=new Set(ids);
+  eData.expenses.forEach(e=>{if(!idset.has(e.id))return;Object.assign(e,ch);if('amount' in ch||'currency' in ch){e.usdAmount=Math.round(toUSD(e.amount,e.currency)*100)/100}});
+  saveE();cancelBulkEdit();
+  renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();
+}
+
+// ---- Click a budget/chart category -> jump to Report & Filter, filtered to it ----
+function filterByCategory(cat){
+  const rc=document.getElementById('rfCat');
+  if(rc){if(![...rc.options].some(o=>o.value===cat)){const o=document.createElement('option');o.value=cat;o.textContent=cat;rc.appendChild(o)}rc.value=cat;}
+  ['rfPur','rfPay','rfCur','rfDue'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='all'});
+  const s=document.getElementById('rfSearch');if(s)s.value='';
+  applyReport();
+  const t=document.getElementById('reportFilterTitle');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+}
+// ---- Live FX: SAR pegged at 3.75; EGP fetched from the web with graceful fallback ----
+function updateUsdPreview(){
+  const curEl=document.getElementById('eCur'),amtEl=document.getElementById('eAmt'),el=document.getElementById('eUsdPreview');
+  if(!el||!curEl||!amtEl)return;
+  const cur=curEl.value,amt=parseFloat(amtEl.value);
+  if(cur&&cur!=='USD'&&!isNaN(amt)&&amt>0){
+    el.textContent='\u2248 $'+toUSD(amt,cur).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD';
+    el.style.display='inline-flex';
+  }else{el.textContent='';el.style.display='none';}
+}
+async function refreshEgpRate(auto){
+  const st=document.getElementById('egpRateStatus'),btn=document.getElementById('egpLiveBtn');
+  if(!auto&&st){st.textContent='Fetching current EGP rate\u2026';st.className='rate-status loading';}
+  if(btn)btn.disabled=true;
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    const egp=j&&j.rates&&Number(j.rates.EGP);
+    if(!egp||isNaN(egp))throw new Error('no EGP rate in response');
+    const newRate=Math.round(egp*10000)/10000;
+    const changed=Math.abs((Number(eData.rates.EGP)||0)-newRate)>0.0001;
+    eData.rates.EGP=newRate;eData.rates.SAR=3.75;
+    const inp=document.getElementById('rateEGP');if(inp)inp.value=newRate;
+    const when=j.time_last_update_utc?new Date(j.time_last_update_utc).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'today';
+    if(st){st.textContent='Live: 1 USD = '+newRate+' EGP \u00b7 updated '+when;st.className='rate-status ok';}
+    if(changed||!auto){
+      eData.expenses.forEach(e=>{e.usdAmount=toUSD(e.amount,e.currency)});
+      renderChart();renderSummary();renderExpenses();renderCards();renderPoints();updateUsdPreview();saveE();
+    }
+  }catch(e){
+    if(st&&!auto){st.textContent='Couldn\u2019t fetch a live rate right now \u2014 using '+eData.rates.EGP+' EGP (edit it manually if needed).';st.className='rate-status warn';}
+  }finally{if(btn)btn.disabled=false;}
+}
 // ===================== INIT =====================
 (async function(){
   // Low Data Mode decision (before fonts load)
@@ -2321,6 +2435,8 @@ function dupBen(){
   updateCfgStatus();
   // Pre-fill settings
   const _c=getCfg();if(_c.pat)document.getElementById('cfgPat').value=_c.pat;if(_c.gist)document.getElementById('cfgGist').value=_c.gist;
+  // Best-effort live EGP rate on load (skips when offline or in Low Data Mode; falls back to the saved rate)
+  if(navigator.onLine&&!document.body.classList.contains('lowdata')){refreshEgpRate(true);}
 })();
 </script>
 </body>
