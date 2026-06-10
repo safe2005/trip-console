@@ -477,6 +477,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .nt-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:2px}
 .ben-pick{width:15px;height:15px;cursor:pointer}
 .btn-dup:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-del-multi{border-color:var(--critical)!important;color:var(--critical)!important}
+.btn-del-multi:hover{background:var(--critical)!important;color:#fff!important}
 .btn-bulk:hover{border-color:var(--accent);color:var(--accent)}
 .bulk-edit-wrap{display:none;border:1px solid var(--accent);border-radius:12px;padding:13px;margin:10px 0 14px;background:var(--surface)}
 .bulk-edit-wrap.show{display:block}
@@ -629,7 +631,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </div>
     <div class="report-summary" id="reportSummary"></div>
   </div>
-  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-bulk" onclick="bulkEditExpenses()" title="Edit all checked rows at once">✎ Bulk edit</button><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
+  <div class="exp-export-bar"><span class="exp-sel-hint">Tick rows, then export →</span><span class="exp-sel-count" id="expSelCount">none selected</span><button class="btn-exp btn-del-multi" onclick="delExpenses()" title="Delete all checked rows">🗑 Delete</button><button class="btn-exp btn-bulk" onclick="bulkEditExpenses()" title="Edit all checked rows at once">✎ Bulk edit</button><button class="btn-exp btn-dup" onclick="dupExpenses()" title="Duplicate the checked rows in this tab">⧉ Copy</button><button class="btn-exp" onclick="exportExpenses('csv')">⬇ CSV</button><button class="btn-exp" onclick="exportExpenses('xls')">⬇ Excel</button></div>
   <div class="bulk-edit-wrap" id="bulkEditWrap">
     <div class="bulk-edit-title">Bulk edit <span id="bulkEditCount">0</span> selected — fill only the fields you want to change; blank fields are left as-is</div>
     <div class="form-row2">
@@ -2322,8 +2324,16 @@ function exportBen(fmt){
 }
 
 // ===================== DUPLICATE SELECTED (in-place) =====================
+function delExpenses(){
+  const ids=expSelectedIds();if(!ids.length){alert('Tick one or more rows to delete.');return}
+  const total=ids.reduce((s,id)=>{const e=eData.expenses.find(x=>x.id===id);return s+(e?e.usdAmount:0)},0);
+  if(!confirm('Delete '+ids.length+' expense'+(ids.length===1?'':'s')+' ($'+Math.round(total).toLocaleString()+' USD)?'))return;
+  eData.expenses=eData.expenses.filter(e=>!ids.includes(e.id));
+  renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE();
+}
 function dupExpenses(){
   const ids=expSelectedIds();if(!ids.length){alert('Tick one or more rows to duplicate.');return}
+  if(!confirm('Duplicate '+ids.length+' expense'+(ids.length===1?'':'s')+'? Copies will be added to the list.'))return;
   eData.expenses.filter(e=>ids.includes(e.id)).forEach(e=>{eData.expenses.push({...e,id:_uid(),desc:(e.desc?e.desc+' ':'')+'(copy)'})});
   renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE();
 }
