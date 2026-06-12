@@ -486,6 +486,13 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .cat-link{cursor:pointer}
 .cat-link:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 
+
+/* URL quick-add toast */
+.qa-toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:9999;
+  background:var(--accent,#3b82f6);color:#fff;padding:14px 28px;border-radius:12px;font-size:14px;font-weight:600;
+  letter-spacing:.01em;box-shadow:0 8px 32px rgba(0,0,0,.35);pointer-events:none;opacity:0;
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s ease}
+.qa-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
 </head>
@@ -2430,6 +2437,29 @@ async function refreshEgpRate(auto){
   }finally{if(btn)btn.disabled=false;}
 }
 // ===================== INIT =====================
+
+// ---- Siri Shortcut / URL quick-add handler ----
+function _handleUrlTask(){
+  const p=new URLSearchParams(window.location.search);
+  const task=p.get('addtask');if(!task)return;
+  const cat=p.get('cat')||'';
+  const prio=p.get('prio')||'Medium';
+  // Build a proper todo entry
+  tData.todos.push({id:_uid(),title:decodeURIComponent(task).trim(),cat:cat,prio:prio,
+    status:'Not started',date:'',time:'',dur:0,day:'',action:'',who:'',note:'(added via Shortcut)',created:Date.now()});
+  saveT();
+  // Switch to the To-Do tab and render
+  switchToTab('todo');
+  // Show toast
+  const toast=document.createElement('div');toast.className='qa-toast';
+  toast.textContent='\u2705 Added: '+decodeURIComponent(task).trim();
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>toast.classList.add('show')));
+  setTimeout(()=>{toast.classList.remove('show');setTimeout(()=>toast.remove(),400)},3000);
+  // Clean URL so refresh doesn't re-add
+  window.history.replaceState(null,'',window.location.pathname);
+}
+
 (async function(){
   // Low Data Mode decision (before fonts load)
   let _ldPref=getLowDataPref();
@@ -2467,6 +2497,8 @@ async function refreshEgpRate(auto){
   const _c=getCfg();if(_c.pat)document.getElementById('cfgPat').value=_c.pat;if(_c.gist)document.getElementById('cfgGist').value=_c.gist;
   // Best-effort live EGP rate on load (skips when offline or in Low Data Mode; falls back to the saved rate)
   if(navigator.onLine&&!document.body.classList.contains('lowdata')){refreshEgpRate(true);}
+  // Check for Siri Shortcut / URL quick-add
+  _handleUrlTask();
 })();
 </script>
 </body>
