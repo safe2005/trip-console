@@ -471,7 +471,6 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .share-link:hover{border-color:var(--accent);color:var(--accent)}
 .share-note{font-size:10.5px;color:var(--faint);line-height:1.45}
 .shared-banner{background:var(--ok-bg);border:1px solid var(--accent);color:var(--text);border-radius:10px;padding:9px 13px;margin:12px 0;font-size:12.5px;font-weight:500}
-.rev-badge{display:inline-block;margin:0 8px 4px 0;background:#b45309;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:6px;text-transform:uppercase}
 .sel-all-lbl{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);cursor:pointer}
 .sel-all-lbl input{width:14px;height:14px;cursor:pointer}
 .td-pick{width:15px;height:15px;cursor:pointer;flex-shrink:0;margin-top:3px}
@@ -487,6 +486,14 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 .cat-link{cursor:pointer}
 .cat-link:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 
+
+/* URL quick-add toast */
+.qa-toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:9999;
+  background:var(--accent,#3b82f6);color:#fff;padding:14px 28px;border-radius:12px;font-size:14px;font-weight:600;
+  letter-spacing:.01em;box-shadow:0 8px 32px rgba(0,0,0,.35);pointer-events:none;opacity:0;
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s ease}
+.qa-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.rev-badge{display:inline-block;margin:0 8px 4px 0;background:#b45309;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:6px;text-transform:uppercase}
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tcrev_theme')||'dark')</script>
 </head>
@@ -816,7 +823,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <tr><td>Le Méridien Cairo Airport</td><td class="phone">+20 2 2696 5000</td></tr>
     </table>
     <div style="margin-top:10px;color:var(--text);font-weight:600">When calling Hilton 855-292-5757, ask:</div>
-    <div style="margin-top:4px">1. Does Conrad Jabal Traveler 4 Makkah participate in the Aspire $100 credit?</div>
+    <div style="margin-top:4px">1. Does Conrad Jabal Omar Makkah participate in the Aspire $100 credit?</div>
     <div>2. What is the Aspire Card Benefit rate for 4 nights (7/2–7/6)?</div>
     <div>3. Can I apply a free night cert AND still get the $100 credit?</div>
     </div>
@@ -1240,7 +1247,7 @@ const PHASES=[
   {type:'task',id:'T13',title:'Front-load $6,000 spend on EACH of 4 Aspires (normal spend)',who:'Adults 1–4',due:'ASAP',val:'→ 700K pts',note:'Welcome points fund the Madinah stay (1A). Complete early. Use the Benefits Tracker tab →'},
   {type:'task',id:'T14',title:'Monitor all 4 Aspire Honors accounts DAILY for cert posting',who:'Adults 1–4',due:'Daily',note:'Time-based, no spend req; post ~8–14 wks after 4/6 (≈ Jun 1–Jul 13).'},
   {type:'gate',id:'GC',tag:'Decision Gate C',q:'Cert posting timing vs Conrad window (7/2)',opts:[
-    {if:'Posted by ~6/28',then:'Use as planned: Traveler 1, Traveler 2 & Traveler 3 at Conrad ($191/nt), Traveler 4 at DoubleTree ($77). Book via 1-800-446-6677. $650 saved.'},
+    {if:'Posted by ~6/28',then:'Use as planned: Traveler 1, Traveler 2 & Traveler 3 at Conrad ($191/nt), Omar at DoubleTree ($77). Book via 1-800-446-6677. $650 saved.'},
     {if:'NOT posted by 6/15',then:'Call Amex 800-528-4800 + Hilton 1-800-446-6677 to expedite.'},
     {if:'Posts after 7/2',then:'Misses Conrad. Fallback: DoubleTree if in window; don\'t put at Madinah (breaks 5NF).'},
   ]},
@@ -1519,7 +1526,7 @@ const __ITIN_SEED=[
 {date:'Jul 2',day:'Thu',loc:'makkah',title:'Transfer to Makkah',items:[
   {t:'flight',v:'✈ Saudia SV 326 SSH→JED dep ~16:27'},
   {t:'act',v:'🚐 Private van JED→Conrad (~$220)'},
-  {t:'hotel',v:'🏨 Conrad Jabal Traveler 4 Makkah check-in (3 rooms, 4 nights)'},
+  {t:'hotel',v:'🏨 Conrad Jabal Omar Makkah check-in (3 rooms, 4 nights)'},
   {t:'act',v:'Begin Umrah'},
 ]},
 {date:'Jul 3',day:'Fri',loc:'makkah',title:'Makkah — Friday',items:[
@@ -2431,6 +2438,29 @@ async function refreshEgpRate(auto){
   }finally{if(btn)btn.disabled=false;}
 }
 // ===================== INIT =====================
+
+// ---- Siri Shortcut / URL quick-add handler ----
+function _handleUrlTask(){
+  const p=new URLSearchParams(window.location.search);
+  const task=p.get('addtask');if(!task)return;
+  const cat=p.get('cat')||'';
+  const prio=p.get('prio')||'Medium';
+  // Build a proper todo entry
+  tData.todos.push({id:_uid(),title:decodeURIComponent(task).trim(),cat:cat,prio:prio,
+    status:'Not started',date:'',time:'',dur:0,day:'',action:'',who:'',note:'(added via Shortcut)',created:Date.now()});
+  saveT();
+  // Switch to the To-Do tab and render
+  switchToTab('todo');
+  // Show toast
+  const toast=document.createElement('div');toast.className='qa-toast';
+  toast.textContent='\u2705 Added: '+decodeURIComponent(task).trim();
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>toast.classList.add('show')));
+  setTimeout(()=>{toast.classList.remove('show');setTimeout(()=>toast.remove(),400)},3000);
+  // Clean URL so refresh doesn't re-add
+  window.history.replaceState(null,'',window.location.pathname);
+}
+
 (async function(){
   // Low Data Mode decision (before fonts load)
   let _ldPref=getLowDataPref();
@@ -2468,6 +2498,8 @@ async function refreshEgpRate(auto){
   const _c=getCfg();if(_c.pat)document.getElementById('cfgPat').value=_c.pat;if(_c.gist)document.getElementById('cfgGist').value=_c.gist;
   // Best-effort live EGP rate on load (skips when offline or in Low Data Mode; falls back to the saved rate)
   if(navigator.onLine&&!document.body.classList.contains('lowdata')){refreshEgpRate(true);}
+  // Check for Siri Shortcut / URL quick-add
+  _handleUrlTask();
 })();
 </script>
 </body>
