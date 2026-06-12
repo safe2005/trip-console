@@ -122,6 +122,23 @@
   <h2 style="font-family:Georgia,'Times New Roman',serif; font-size:21px; color:#0d5b6e; margin:28px 0 6px; padding-bottom:6px; border-bottom:1px solid #dde6e8; font-weight:700;">Share a read-only calendar</h2>
   <p style="margin:0 0 14px;">The Calendar's <strong>Share</strong> button hands someone a view-only link — through your phone's share sheet, or by email. They see the schedule in <strong>their own</strong> timezone and can look but not change anything. Because the calendar travels inside the link itself, it sends best over iMessage or email.</p>
 
+  <!-- ===== SIRI SHORTCUT QUICK-ADD ===== -->
+  <h2 style="font-family:Georgia,'Times New Roman',serif; font-size:21px; color:#0d5b6e; margin:28px 0 6px; padding-bottom:6px; border-bottom:1px solid #dde6e8; font-weight:700;">Add to-dos from Siri or the home screen</h2>
+  <p style="margin:0 0 14px;">The console accepts to-do items via a URL, which means you can add tasks hands-free with a two-step Apple Shortcut &mdash; no need to open the console and type into the form.</p>
+  <p style="margin:0 0 6px; font-weight:600;">Setting up the Shortcut (one time, ~2 minutes):</p>
+  <ol style="margin:0 0 14px; padding-left:22px;">
+    <li style="margin:7px 0;">Open the <strong>Shortcuts</strong> app on your iPhone and tap <strong>+</strong> to create a new shortcut.</li>
+    <li style="margin:7px 0;">Add an <strong>Ask for Input</strong> action. Set the prompt to something like <em>&ldquo;Trip task?&rdquo;</em> and the input type to <strong>Text</strong>.</li>
+    <li style="margin:7px 0;">Add an <strong>Open URL</strong> action. Set the URL to:<br><code style="font-size:13px; background:#eef3f5; padding:2px 6px; border-radius:4px;">https://safe2005.github.io/trip-console/?addtask=[Provided Input]</code><br>(Tap &ldquo;Provided Input&rdquo; from the variable picker &mdash; Shortcuts will URL-encode it automatically.)</li>
+    <li style="margin:7px 0;">Name the shortcut <strong>Trip Task</strong> and tap <strong>Done</strong>.</li>
+  </ol>
+  <p style="margin:0 0 6px; font-weight:600;">Using it:</p>
+  <ul style="margin:0 0 14px; padding-left:22px;">
+    <li style="margin:7px 0;">Say <strong>&ldquo;Hey Siri, Trip Task&rdquo;</strong>, dictate the task, and it lands in the To-Do tab automatically.</li>
+    <li style="margin:7px 0;">Or tap the shortcut from the home screen, Shortcuts widget, or share sheet.</li>
+    <li style="margin:7px 0;">You can optionally add a <strong>category</strong> by appending <code style="font-size:13px; background:#eef3f5; padding:2px 6px; border-radius:4px;">&amp;cat=Transport</code> to the URL (use any category name that exists in the console).</li>
+  </ul>
+
   <!-- ===== DATA & DEVICES ===== -->
   <h2 style="font-family:Georgia,'Times New Roman',serif; font-size:21px; color:#0d5b6e; margin:28px 0 6px; padding-bottom:6px; border-bottom:1px solid #dde6e8; font-weight:700;">Your data &amp; your devices</h2>
   <ul style="margin:0 0 14px; padding-left:22px;">
