@@ -493,7 +493,6 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
   letter-spacing:.01em;box-shadow:0 8px 32px rgba(0,0,0,.35);pointer-events:none;opacity:0;
   transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s ease}
 .qa-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.rev-badge{display:inline-block;margin:0 8px 4px 0;background:#b45309;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:6px;text-transform:uppercase}
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tcrev_theme')||'dark')</script>
 </head>
@@ -503,7 +502,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 <header>
   <div class="hbar">
     <div class="brand">
-      <div class="kicker"><span class="rev-badge">⚠ Review build · sample data, not real figures</span><span class="ld-badge" id="ldBadge">⚡ Low Data</span></div>
+      <div class="kicker"><span class="ld-badge" id="ldBadge">⚡ Low Data</span></div>
       <div class="htitle">Egypt + <em>Umrah</em> 2026</div>
     </div>
     <div class="search-wrap">
@@ -823,7 +822,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <tr><td>Le Méridien Cairo Airport</td><td class="phone">+20 2 2696 5000</td></tr>
     </table>
     <div style="margin-top:10px;color:var(--text);font-weight:600">When calling Hilton 855-292-5757, ask:</div>
-    <div style="margin-top:4px">1. Does Conrad Jabal Omar Makkah participate in the Aspire $100 credit?</div>
+    <div style="margin-top:4px">1. Does Conrad Jabal Traveler 4 Makkah participate in the Aspire $100 credit?</div>
     <div>2. What is the Aspire Card Benefit rate for 4 nights (7/2–7/6)?</div>
     <div>3. Can I apply a free night cert AND still get the $100 credit?</div>
     </div>
@@ -835,7 +834,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <tr><td style="color:var(--critical)">🔴 MANDATORY</td><td><b>Meningococcal ACWY</b> — ≥10 days before JED arrival (7/2) = by 6/22. Checked at boarding + entry.</td></tr>
       <tr><td style="color:var(--soon)">🟠 RECOMMENDED</td><td><b>Hep A</b> (by ~6/7), <b>Typhoid</b> (by ~6/14), <b>Polio IPV booster</b> (CDC rec for pilgrims), <b>MMR</b> (verify), <b>Flu</b>, routine Tdap/HepB/Varicella</td></tr>
       <tr><td>❌ Not needed</td><td>Yellow Fever (not from endemic area), Cholera, Rabies, COVID (not currently mandatory)</td></tr>
-      <tr><td>Saudi e-Visa</td><td>visa.visitsaudi.com · $167/pax · 1-yr multi-entry · Covers Umrah</td></tr>
+      <tr><td>Saudi e-Visa</td><td>visa.visitsaudi.com · $XXX/pax · 1-yr multi-entry · Covers Umrah</td></tr>
       <tr><td>Egypt Visa</td><td><b>Multi-entry e-visa — RECOMMENDED: $60/pax</b> at visa2egypt.gov.eg · Apply 7–10 days before departure · Covers Jun 22 arrival + Jul 11 re-entry from Madinah · On-arrival ($30) is single-entry only — does NOT cover Jul 11</td></tr>
       <tr><td>Apps</td><td><b>Nusuk</b> (mandatory for Umrah permits + Rawdah booking)</td></tr>
       <tr><td>Documents</td><td>ICVP/yellow card (vaccine record), passports (6+ mo validity), printed hotel confirmations</td></tr>
@@ -848,8 +847,8 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     <div style="color:var(--text);font-weight:600;margin-bottom:6px">1A — reduce out-of-pocket CASH (priority):</div>
     <table>
       <tr><td>Resort Credit ×4</td><td>$1,600 (DoubleTree; folio split 6/30)</td></tr>
-      <tr><td>Diamond breakfast</td><td>~$4,160 (8 pax × 13 Hilton nights)</td></tr>
-      <tr><td>Executive Lounge</td><td>~$1,800 (Conrad + Madinah)</td></tr>
+      <tr><td>Diamond breakfast</td><td>~$X,XXX (8 pax × 13 Hilton nights)</td></tr>
+      <tr><td>Executive Lounge</td><td>~$X,XXX (Conrad + Madinah)</td></tr>
       <tr><td>Free night certs</td><td>$650 (3 Conrad + 1 DoubleTree)</td></tr>
       <tr><td>AA miles → Le Méridien</td><td>~$320–680 (AAdvantage Hotels)</td></tr>
       <tr><td>Flight credits ×4</td><td>$800 ($200/card)</td></tr>
@@ -964,7 +963,7 @@ function _clearPending(){try{localStorage.removeItem('tcrev_pending')}catch(e){}
 function _reconcileLocal(){
   let changed=false;const pend=_getPending();
   [A_KEY,B_KEY,E_KEY,P_KEY].forEach(k=>{
-    const lv=localStorage.getItem('tcrev_'+k);if(!lv)return;
+    const lv=localStorage.getItem('tc_'+k);if(!lv)return;
     if(_gistCache[k]===undefined||pend.includes(k)){try{_gistCache[k]=JSON.parse(lv)}catch(e){_gistCache[k]=lv}changed=true;}
   });
   return changed;
@@ -1014,7 +1013,7 @@ async function sGet(key){
     return null;
   }
   // Tier 2: browser localStorage (offline fallback — used only when not connected to cloud)
-  try{const v=localStorage.getItem('tcrev_'+key);if(_sMode!=='cloud')_sMode='browser';return v?{value:v}:null}catch(e){}
+  try{const v=localStorage.getItem('tc_'+key);if(_sMode!=='cloud')_sMode='browser';return v?{value:v}:null}catch(e){}
   if(_sMode!=='cloud')_sMode='memory';return null;
 }
 
@@ -1023,14 +1022,14 @@ async function sSet(key,value){
   // Tier 1: GitHub cloud — once in cloud mode, STAY in cloud mode no matter what.
   if(_sMode==='cloud'){
     _gistCache[key]=parsed;
-    try{localStorage.setItem('tcrev_'+key,value)}catch(e){}            // offline mirror, not a mode change
+    try{localStorage.setItem('tc_'+key,value)}catch(e){}            // offline mirror, not a mode change
     if(LOWDATA){_pendingSync=true;ss('saved · sync in ≤45s');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000);return}
     if(await _gistSave()){_pendingSync=false;ss('synced to GitHub · '+_ts())}
     else{_pendingSync=true;ss('saved locally · cloud sync will retry');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000)}
     return;                                                          // never fall through to a browser-only demotion
   }
   // Tier 2: browser localStorage (offline fallback) — record as pending so it syncs up on reconnect
-  try{localStorage.setItem('tcrev_'+key,value);_markPending(key);if(_sMode!=='cloud')_sMode='browser';ss('saved offline · will sync when GitHub is reachable · '+_ts());return}catch(e){}
+  try{localStorage.setItem('tc_'+key,value);_markPending(key);if(_sMode!=='cloud')_sMode='browser';ss('saved offline · will sync when GitHub is reachable · '+_ts());return}catch(e){}
   if(_sMode!=='cloud')_sMode='memory';ss('in-memory only');
 }
 
@@ -1101,11 +1100,11 @@ function updateCfgStatus(){
 const DEPART=new Date('2026-06-21T00:00:00');
 const A_KEY='egypt_umrah_action_tracker_v1', B_KEY='egypt_trip_benefits_v2', E_KEY='egypt_trip_expenses_v2', T_KEY='egypt_trip_planner_v1';
 const CARDS=[
-  {id:'aspire1',name:'Amex Aspire — Traveler 1',target:5000,color:'#d8a44a'},
-  {id:'aspire2',name:'Amex Aspire — Traveler 2',target:5000,color:'#e0a13a'},
-  {id:'aspire3',name:'Amex Aspire — Traveler 3',target:5000,color:'#ecc879'},
-  {id:'aspire4',name:'Amex Aspire — Traveler 4',target:5000,color:'#54b27a'},
-  {id:'citi',name:'Citi AA Executive — Traveler 1',target:6000,color:'#5fa0db'},
+  {id:'aspire1',name:'Amex Aspire — Traveler 1',target:6000,color:'#d8a44a'},
+  {id:'aspire2',name:'Amex Aspire — Traveler 2',target:6000,color:'#e0a13a'},
+  {id:'aspire3',name:'Amex Aspire — Traveler 3',target:6000,color:'#ecc879'},
+  {id:'aspire4',name:'Amex Aspire — Traveler 4',target:6000,color:'#54b27a'},
+  {id:'citi',name:'Citi AA Executive — Traveler 1',target:7000,color:'#5fa0db'},
 ];
 const __CAT_SEED=['Flights (AA/BA)','Regional Flights','Hotels','Transport','Visas & Vaccines','Activities & Excursions','Food & Beverage','Insurance','Shopping & Misc'];
 
@@ -1160,7 +1159,7 @@ function rebuildCatSelects(){
   buildReportSelects();
 }
 
-const DEF_BUDGETS={'Flights (AA/BA)':10000,'Regional Flights':4000,'Hotels':5000,'Transport':1000,'Visas & Vaccines':3000,'Activities & Excursions':2000,'Food & Beverage':5000,'Insurance':500,'Shopping & Misc':2000};
+const DEF_BUDGETS={'Flights (AA/BA)':12800,'Regional Flights':4300,'Hotels':4900,'Transport':700,'Visas & Vaccines':2936,'Activities & Excursions':2000,'Food & Beverage':4600,'Insurance':400,'Shopping & Misc':2000};
 const DEF_RATES={EGP:52,SAR:3.75};
 
 // ===================== STATE =====================
@@ -1219,8 +1218,8 @@ function renderAllTabs(){['actions','benefits','expenses','itinerary'].forEach(r
 const PHASES=[
 {id:'w0',tag:'Wave 0',cls:'critical',title:'Do Today',sub:'Deadline-critical — start within 24–72 hours',items:[
   {type:'task',id:'T1',title:'Book travel-clinic appointment for all 8 (Atrium / Wake Forest)',who:'Traveler 1',due:'TODAY',crit:true,note:'Vaccines need lead time. Meningococcal ACWY is MANDATORY for Saudi entry and must be ≥10 days before JED arrival (7/2) → by ~6/22. Hep A / Polio ideally by 6/7, Typhoid by ~6/14.'},
-  {type:'task',id:'T2',title:'Apply 8 Saudi e-visas at visa.visitsaudi.com',who:'All 8',due:'NOW (was 6/1)',crit:true,tel:'$167/pax',note:'1-yr multi-entry, covers Umrah. Allow processing time. Egypt: RECOMMEND multi-entry e-visa $60 at visa2egypt.gov.eg — re-enters Egypt Jul 11; on-arrival ($30) is single-entry only.'},
-  {type:'task',id:'T3',title:'Install Nusuk app, start Umrah permits, book Rawdah slots (7/7–7/10)',who:'All 8',due:'NOW',crit:true,note:'Mandatory for Umrah permits + Rawdah visits. Slots limited; grab 7/7–7/10 ASAP.'},
+  {type:'task',id:'T2',title:'Apply 8 Saudi e-visas at visa.visitsaudi.com',who:'All 8',due:'NOW (was 6/1)',crit:true,tel:'$XXX/pax',note:'1-yr multi-entry, covers Umrah. Allow processing time. Egypt: RECOMMEND multi-entry e-visa $60 at visa2egypt.gov.eg — re-enters Egypt Jul 11; on-arrival ($30) is single-entry only.'},
+  {type:'task',id:'T3',title:'Install Nusuk app, book Umrah slots NOW, book Rawdah slots (1-week rolling window)',who:'All 8',due:'NOW',crit:true,note:'Book Umrah permit slots immediately via Nusuk app. Rawdah slots only open 1 week ahead — check daily starting ~6/30 for 7/7–7/10 Madinah dates. Slots are limited and fill fast.'},
 ]},
 {id:'w1',tag:'Wave 1',cls:'soon',title:'This Week — Lock Bookings & Key Decisions',sub:'Availability + the decisions that shape everything',items:[
   {type:'gate',id:'GA',tag:'Decision Gate A',q:'Are all 8 international tickets Main Cabin (NOT Basic Economy)?',opts:[
@@ -1229,16 +1228,16 @@ const PHASES=[
     {if:'Not sure yet',then:'Check fare class on each AA/BA confirmation this week — gates the bag, change, and upgrade items.'},
   ]},
   {type:'task',id:'T4',title:'Verify Main Cabin fare class + free checked bag on all 8 tickets',who:'Traveler 1',due:'This week',note:'Intl economy includes first checked bag — confirm. Resolves Gate A.'},
-  {type:'task',id:'T5',title:'Book New Cairo Villa (4BR, 6 nights, 6/22–6/28)',who:'Traveler 1',due:'This week',tel:'~$1,800'},
-  {type:'task',id:'T6',title:'Book DoubleTree Sharm — 4 rooms, FLEXIBLE rate (6/28–7/2)',who:'Adults 1–4',due:'This week',tel:'$77/nt',note:'Flexible rate required for Resort Credit. Each room on its occupant\'s Aspire.'},
+  {type:'task',id:'T5',title:'Book New Cairo Villa (4BR, 6 nights, 6/22–6/28)',who:'Traveler 1',due:'This week',tel:'~$X,XXX'},
+  {type:'task',id:'T6',title:'Book DoubleTree Sharm — 4 rooms, FLEXIBLE rate (6/28–7/2)',who:'Adults 1–4',due:'This week',tel:'$XX/nt',note:'Flexible rate required for Resort Credit. Each room on its occupant\'s Aspire.'},
   {type:'gate',id:'GB',tag:'Decision Gate B',q:'$100 Conrad property credit — call Hilton 855-292-5757 before booking',opts:[
     {if:'Already booked on hilton.com (non-refundable)',then:'KEEP IT — forfeiting prepayment > $100. Just apply cert. Skip rebook.'},
     {if:'Booked on hilton.com (refundable) & Aspire rate comparable & cert combines',then:'Rebook via Aspire Card Benefit rate → up to $291/card (cert + $100). Book new FIRST, then cancel old.'},
     {if:'Not booked Conrad yet',then:'Book via HiltonHonorsAspireCard.com "Aspire Card Benefit rate" or 855-292-5757; confirm cert can apply.'},
   ]},
-  {type:'task',id:'T7',title:'Book Conrad Makkah — 3 rooms (per Gate B)',who:'Traveler 1, Traveler 2 & Traveler 3',due:'This week',tel:'$191/nt'},
-  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms on POINTS; verify 5th Night Free',who:'Adults 1–4',due:'This week',tel:'~960K pts',note:'Needs points on hand. Don\'t put a cert here (breaks 5NF).'},
-  {type:'task',id:'T9',title:'Book Le Méridien Cairo Airport — 4 DAY-USE rooms (7/11)',who:'Traveler 1',due:'This week',tel:'AAdvantage Hotels',val:'AA miles → ~$320–680',note:'Only need ~21:10–04:30; book DAY-USE. Le Méridien is MARRIOTT — no Hilton benefit. Redeem AA miles via AAdvantage Hotels ("Redeem Miles", ~1cpp). Verify ≥1cpp logged in. Doesn\'t tap Hilton points.'},
+  {type:'task',id:'T7',title:'Book Conrad Makkah — 3 rooms (per Gate B)',who:'Travelers 1, 2 & 3',due:'This week',tel:'$XXX/nt'},
+  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms CASH + 1 FNC',who:'Adults 1–4',due:'This week',tel:'SAR XX,XXX (~$X,XXX)',note:'At 73K pts/night, cash beats points. Rooms 1–3 @ SAR X,XXX; Room 4 @ SAR X,XXX. Apply remaining (4th) FNC to 1 room → saves SAR XXX–XXX (1 free night). Charge all rooms to respective Aspire cards (14×). Optional: use 44K existing pts via Points & Money on 1 room for ~$150 off.'},
+  {type:'task',id:'T9',title:'Le Méridien Cairo Airport — 3 rooms BOOKED w/ AA miles (7/11)',who:'Traveler 1',due:'Done',tel:'AAdvantage Hotels',val:'AA miles',note:'3 separate single-room bookings via AAdvantage Hotels (Rocket Travel/Agoda) for cancellation flexibility. Redeemed AA miles (~1cpp). Le Méridien is MARRIOTT — no Hilton benefit. Only need ~21:10–04:30.'},
   {type:'task',id:'T10',title:'Book regional flights: CAI→SSH, Saudia SV 326, flynas XY 576',who:'Traveler 1',due:'This week',note:'On Aspires (7×). VERIFY flynas fare includes bags + 5L Zamzam.'},
   {type:'task',id:'T11',title:'Book ground transport: van JED→Conrad, HSR Makkah→Madinah',who:'Traveler 1',due:'This week',tel:'van ~$220'},
   {type:'task',id:'T12',title:'Buy supplemental travel insurance (regional-flight gap)',who:'Traveler 1',due:'This week',tel:'~$300–500',note:'Aspire trip insurance needs entire round-trip on card; regional one-ways aren\'t covered.'},
@@ -1247,7 +1246,7 @@ const PHASES=[
   {type:'task',id:'T13',title:'Front-load $6,000 spend on EACH of 4 Aspires (normal spend)',who:'Adults 1–4',due:'ASAP',val:'→ 700K pts',note:'Welcome points fund the Madinah stay (1A). Complete early. Use the Benefits Tracker tab →'},
   {type:'task',id:'T14',title:'Monitor all 4 Aspire Honors accounts DAILY for cert posting',who:'Adults 1–4',due:'Daily',note:'Time-based, no spend req; post ~8–14 wks after 4/6 (≈ Jun 1–Jul 13).'},
   {type:'gate',id:'GC',tag:'Decision Gate C',q:'Cert posting timing vs Conrad window (7/2)',opts:[
-    {if:'Posted by ~6/28',then:'Use as planned: Traveler 1, Traveler 2 & Traveler 3 at Conrad ($191/nt), Omar at DoubleTree ($77). Book via 1-800-446-6677. $650 saved.'},
+    {if:'Posted by ~6/28',then:'Use as planned: Travelers 1, 2 & 3 at Conrad ($XXX/nt), Traveler 4 at DoubleTree ($77). Book via 1-800-446-6677. $650 saved.'},
     {if:'NOT posted by 6/15',then:'Call Amex 800-528-4800 + Hilton 1-800-446-6677 to expedite.'},
     {if:'Posts after 7/2',then:'Misses Conrad. Fallback: DoubleTree if in window; don\'t put at Madinah (breaks 5NF).'},
   ]},
@@ -1276,7 +1275,7 @@ const PHASES=[
 {id:'w4',tag:'Wave 4',cls:'during',title:'During the Trip — In-Destination',sub:'Don\'t miss these on the ground',items:[
   {type:'task',id:'T28',title:'Apply Egypt multi-entry e-visa — $60/pax at visa2egypt.gov.eg',who:'All 8',due:'Before departure',tel:'$60/pax × 8 = $480',val:'covers both entries',note:'Multi-entry covers Jun 22 arrival AND Jul 11 re-entry from Madinah. On-arrival ($30) = single-entry only — does NOT cover Jul 11. Apply 7–10 days before departure. Official site: visa2egypt.gov.eg'},
   {type:'task',id:'T29',title:'Request Diamond room upgrades at every Hilton check-in',who:'Adults 1–4',due:'At check-in',val:'1B upgrade',note:'Haram-view at Conrad/Madinah; sea/pool at DoubleTree.'},
-  {type:'task',id:'T30',title:'Charge $100+ on-property at Conrad (if $100-credit rate)',who:'Traveler 1, Traveler 2 & Traveler 3',due:'During Makkah',val:'$300'},
+  {type:'task',id:'T30',title:'Charge $100+ on-property at Conrad (if $100-credit rate)',who:'Travelers 1, 2 & 3',due:'During Makkah',val:'$300'},
   {type:'task',id:'T31',title:'MID-STAY FOLIO SPLIT at DoubleTree — evening 6/30',who:'Adults 1–4',due:'6/30',crit:true,val:'$800',note:'Settle folio 6/30 to capture $200 H1 + $200 H2 Resort Credit per card. Skipping forfeits $800.'},
   {type:'task',id:'T32',title:'Repack Zamzam at Le Méridien into 23kg checked bags',who:'All',due:'7/11',note:'BA free-Zamzam is JED-origin only; from CAI must fit 23kg.'},
 ]},
@@ -1412,11 +1411,11 @@ function clearExpenses(){if(!confirm('Reset all expenses and budgets?'))return;e
 
 // ===================== POINTS & MILES TRACKER =====================
 const POINT_ACCOUNTS=[
-  {id:'hh1',name:'Hilton Honors — Traveler 1',prog:'HH',unit:'pts',src:'aspire1',bonus:150000,cls:'hh'},
-  {id:'hh2',name:'Hilton Honors — Traveler 2',prog:'HH',unit:'pts',src:'aspire2',bonus:150000,cls:'hh'},
-  {id:'hh3',name:'Hilton Honors — Traveler 3',prog:'HH',unit:'pts',src:'aspire3',bonus:150000,cls:'hh'},
-  {id:'hh4',name:'Hilton Honors — Traveler 4',prog:'HH',unit:'pts',src:'aspire4',bonus:150000,cls:'hh'},
-  {id:'aa1',name:'AAdvantage — Traveler 1 (primary)',prog:'AA',unit:'mi',src:'citi',bonus:75000,cls:'aa'},
+  {id:'hh1',name:'Hilton Honors — Traveler 1',prog:'HH',unit:'pts',src:'aspire1',bonus:175000,cls:'hh'},
+  {id:'hh2',name:'Hilton Honors — Traveler 2',prog:'HH',unit:'pts',src:'aspire2',bonus:175000,cls:'hh'},
+  {id:'hh3',name:'Hilton Honors — Traveler 3',prog:'HH',unit:'pts',src:'aspire3',bonus:175000,cls:'hh'},
+  {id:'hh4',name:'Hilton Honors — Traveler 4',prog:'HH',unit:'pts',src:'aspire4',bonus:175000,cls:'hh'},
+  {id:'aa1',name:'AAdvantage — Traveler 1 (primary)',prog:'AA',unit:'mi',src:'citi',bonus:70000,cls:'aa'},
   {id:'aa2',name:'AAdvantage — Traveler 2',prog:'AA',unit:'mi',src:null,bonus:0,cls:'aa'},
   {id:'aa3',name:'AAdvantage — Traveler 3',prog:'AA',unit:'mi',src:null,bonus:0,cls:'aa'},
   {id:'aa4',name:'AAdvantage — Traveler 4',prog:'AA',unit:'mi',src:null,bonus:0,cls:'aa'},
@@ -1526,7 +1525,7 @@ const __ITIN_SEED=[
 {date:'Jul 2',day:'Thu',loc:'makkah',title:'Transfer to Makkah',items:[
   {t:'flight',v:'✈ Saudia SV 326 SSH→JED dep ~16:27'},
   {t:'act',v:'🚐 Private van JED→Conrad (~$220)'},
-  {t:'hotel',v:'🏨 Conrad Jabal Omar Makkah check-in (3 rooms, 4 nights)'},
+  {t:'hotel',v:'🏨 Conrad Jabal Traveler 4 Makkah check-in (3 rooms, 4 nights)'},
   {t:'act',v:'Begin Umrah'},
 ]},
 {date:'Jul 3',day:'Fri',loc:'makkah',title:'Makkah — Friday',items:[
