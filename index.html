@@ -1219,7 +1219,7 @@ const PHASES=[
 {id:'w0',tag:'Wave 0',cls:'critical',title:'Do Today',sub:'Deadline-critical — start within 24–72 hours',items:[
   {type:'task',id:'T1',title:'Book travel-clinic appointment for all 8 (Atrium / Wake Forest)',who:'Hossam',due:'TODAY',crit:true,note:'Vaccines need lead time. Meningococcal ACWY is MANDATORY for Saudi entry and must be ≥10 days before JED arrival (7/2) → by ~6/22. Hep A / Polio ideally by 6/7, Typhoid by ~6/14.'},
   {type:'task',id:'T2',title:'Apply 8 Saudi e-visas at visa.visitsaudi.com',who:'All 8',due:'NOW (was 6/1)',crit:true,tel:'$167/pax',note:'1-yr multi-entry, covers Umrah. Allow processing time. Egypt: RECOMMEND multi-entry e-visa $60 at visa2egypt.gov.eg — re-enters Egypt Jul 11; on-arrival ($30) is single-entry only.'},
-  {type:'task',id:'T3',title:'Install Nusuk app, start Umrah permits, book Rawdah slots (7/7–7/10)',who:'All 8',due:'NOW',crit:true,note:'Mandatory for Umrah permits + Rawdah visits. Slots limited; grab 7/7–7/10 ASAP.'},
+  {type:'task',id:'T3',title:'Install Nusuk app, book Umrah slots NOW, book Rawdah slots (1-week rolling window)',who:'All 8',due:'NOW',crit:true,note:'Book Umrah permit slots immediately via Nusuk app. Rawdah slots only open 1 week ahead — check daily starting ~6/30 for 7/7–7/10 Madinah dates. Slots are limited and fill fast.'},
 ]},
 {id:'w1',tag:'Wave 1',cls:'soon',title:'This Week — Lock Bookings & Key Decisions',sub:'Availability + the decisions that shape everything',items:[
   {type:'gate',id:'GA',tag:'Decision Gate A',q:'Are all 8 international tickets Main Cabin (NOT Basic Economy)?',opts:[
@@ -1236,8 +1236,8 @@ const PHASES=[
     {if:'Not booked Conrad yet',then:'Book via HiltonHonorsAspireCard.com "Aspire Card Benefit rate" or 855-292-5757; confirm cert can apply.'},
   ]},
   {type:'task',id:'T7',title:'Book Conrad Makkah — 3 rooms (per Gate B)',who:'Hossam, Shereen & Salma',due:'This week',tel:'$191/nt'},
-  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms on POINTS; verify 5th Night Free',who:'Adults 1–4',due:'This week',tel:'~960K pts',note:'Needs points on hand. Don\'t put a cert here (breaks 5NF).'},
-  {type:'task',id:'T9',title:'Book Le Méridien Cairo Airport — 4 DAY-USE rooms (7/11)',who:'Hossam',due:'This week',tel:'AAdvantage Hotels',val:'AA miles → ~$320–680',note:'Only need ~21:10–04:30; book DAY-USE. Le Méridien is MARRIOTT — no Hilton benefit. Redeem AA miles via AAdvantage Hotels ("Redeem Miles", ~1cpp). Verify ≥1cpp logged in. Doesn\'t tap Hilton points.'},
+  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms CASH + 1 FNC',who:'Adults 1–4',due:'This week',tel:'SAR 17,857 (~$4,762)',note:'At 73K pts/night, cash beats points. Rooms 1–3 @ SAR 4,805.85; Room 4 @ SAR 4,298.70. Apply remaining (4th) FNC to 1 room → saves SAR 860–961 (1 free night). Charge all rooms to respective Aspire cards (14×). Optional: use 44K existing pts via Points & Money on 1 room for ~$150 off.'},
+  {type:'task',id:'T9',title:'Le Méridien Cairo Airport — 3 rooms BOOKED w/ AA miles (7/11)',who:'Hossam',due:'Done',tel:'AAdvantage Hotels',val:'AA miles',note:'3 separate single-room bookings via AAdvantage Hotels (Rocket Travel/Agoda) for cancellation flexibility. Redeemed AA miles (~1cpp). Le Méridien is MARRIOTT — no Hilton benefit. Only need ~21:10–04:30.'},
   {type:'task',id:'T10',title:'Book regional flights: CAI→SSH, Saudia SV 326, flynas XY 576',who:'Hossam',due:'This week',note:'On Aspires (7×). VERIFY flynas fare includes bags + 5L Zamzam.'},
   {type:'task',id:'T11',title:'Book ground transport: van JED→Conrad, HSR Makkah→Madinah',who:'Hossam',due:'This week',tel:'van ~$220'},
   {type:'task',id:'T12',title:'Buy supplemental travel insurance (regional-flight gap)',who:'Hossam',due:'This week',tel:'~$300–500',note:'Aspire trip insurance needs entire round-trip on card; regional one-ways aren\'t covered.'},
