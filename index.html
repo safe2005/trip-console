@@ -841,6 +841,26 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
     </table></div>
   </div>
 
+  <div class="ref-section" id="refLuggage">
+    <div class="ref-head" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ri">▼</span> Luggage Limits (tightest constraint per leg)</div>
+    <div class="ref-body"><table>
+      <tr><td>BA (CLT→LHR→CAI)</td><td><b>Carry-on:</b> 22×18×10 in, <b>Personal:</b> 16×12×6 in, combined 51 lb<br><b>Checked:</b> 35×30×17 in, 51 lb Econ / 70 lb Biz</td></tr>
+      <tr><td>Air Cairo (CAI→SSH)</td><td><b>Carry-on:</b> 22×16×9 in, <span style="color:var(--critical);font-weight:700">15 lb ← tightest</span><br><b>Checked:</b> 62 in L+W+H, 66 lb</td></tr>
+      <tr><td>Saudia (SSH→JED)</td><td>Economy: 1×23 kg checked + 7 kg carry-on</td></tr>
+      <tr><td>flynas (MED→CAI)</td><td>Check fare — verify bags + 5L Zamzam included</td></tr>
+      <tr><td style="color:var(--critical)">⚠️ Key</td><td>Air Cairo carry-on = 15 lb. Shift weight to checked bags before SSH. BA enforces bag sizers at Heathrow.</td></tr>
+    </table></div>
+  </div>
+
+  <div class="ref-section" id="refIhram">
+    <div class="ref-head" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ri">▼</span> Ihram & Miqat — July 2</div>
+    <div class="ref-body"><table>
+      <tr><td>Miqat</td><td><b>Al-Juhfah / Rabigh</b> — applies to travelers arriving from Sharm via KAIA</td></tr>
+      <tr><td>When</td><td><b>Before boarding</b> SV 326 at SSH. Flight crosses Miqat in-air. No airline announcement.</td></tr>
+      <tr><td>Steps</td><td>Shower + niyyah at DoubleTree before checkout. Wear ihram to airport. Talbiyah before takeoff.</td></tr>
+    </table></div>
+  </div>
+
   <div class="ref-section" id="ref1A1B">
     <div class="ref-head" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ri">▼</span> Benefit Strategy 1A / 1B</div>
     <div class="ref-body">
@@ -849,9 +869,9 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <tr><td>Resort Credit ×4</td><td>$1,600 (DoubleTree; folio split 6/30)</td></tr>
       <tr><td>Diamond breakfast</td><td>~$4,160 (8 pax × 13 Hilton nights)</td></tr>
       <tr><td>Executive Lounge</td><td>~$1,800 (Conrad + Madinah)</td></tr>
-      <tr><td>Free night certs</td><td>$650 (3 Conrad + 1 DoubleTree)</td></tr>
+      <tr><td>Free night certs</td><td>3 Conrad (done) + 1 Madinah Hilton (pending, saves ~SAR 860–961)</td></tr>
       <tr><td>AA miles → Le Méridien</td><td>~$320–680 (AAdvantage Hotels)</td></tr>
-      <tr><td>Flight credits ×4</td><td>$800 ($200/card)</td></tr>
+      <tr><td>Flight credit</td><td>$50 remaining (1 card Q3; regional flights used 1 card)</td></tr>
       <tr><td>Free checked bags</td><td>Included in intl fare</td></tr>
       <tr><td>Admirals Club</td><td>~$200 (food/drinks at CLT)</td></tr>
       <tr><td style="font-weight:700;color:var(--ok)">TOTAL 1A</td><td style="font-weight:700;color:var(--ok)">~$9,730+</td></tr>
@@ -1227,42 +1247,39 @@ const PHASES=[
     {if:'No — some are Basic Economy',then:'Basic Economy can\'t be changed/upgraded. Consider rebooking to Main Cabin — verify fare difference first.'},
     {if:'Not sure yet',then:'Check fare class on each AA/BA confirmation this week — gates the bag, change, and upgrade items.'},
   ]},
-  {type:'task',id:'T4',title:'Verify Main Cabin fare class + free checked bag on all 8 tickets',who:'Hossam',due:'This week',note:'Intl economy includes first checked bag — confirm. Resolves Gate A.'},
-  {type:'task',id:'T5',title:'Book New Cairo Villa (4BR, 6 nights, 6/22–6/28)',who:'Hossam',due:'This week',tel:'~$1,800'},
-  {type:'task',id:'T6',title:'Book DoubleTree Sharm — 4 rooms, FLEXIBLE rate (6/28–7/2)',who:'Adults 1–4',due:'This week',tel:'$77/nt',note:'Flexible rate required for Resort Credit. Each room on its occupant\'s Aspire.'},
+  {type:'task',id:'T4',title:'Verify Main Cabin fare class + free checked bag on all 8 tickets',who:'Hossam',due:'Before 6/21',note:'Intl economy includes first checked bag — confirm. Resolves Gate A.'},
+  {type:'task',id:'T5',title:'Book New Cairo Villa (4BR, 6 nights, 6/22–6/28)',who:'Hossam',due:'Before 6/21',tel:'~$1,800'},
+  {type:'task',id:'T6',title:'Book DoubleTree Sharm — 4 rooms, FLEXIBLE rate (6/28–7/2)',who:'Adults 1–4',due:'Before 6/21',tel:'$77/nt × 4 rooms',note:'Flexible rate required for Resort Credit. Each room on its occupant\'s Aspire.'},
   {type:'gate',id:'GB',tag:'Decision Gate B',q:'$100 Conrad property credit — call Hilton 855-292-5757 before booking',opts:[
     {if:'Already booked on hilton.com (non-refundable)',then:'KEEP IT — forfeiting prepayment > $100. Just apply cert. Skip rebook.'},
     {if:'Booked on hilton.com (refundable) & Aspire rate comparable & cert combines',then:'Rebook via Aspire Card Benefit rate → up to $291/card (cert + $100). Book new FIRST, then cancel old.'},
     {if:'Not booked Conrad yet',then:'Book via HiltonHonorsAspireCard.com "Aspire Card Benefit rate" or 855-292-5757; confirm cert can apply.'},
   ]},
-  {type:'task',id:'T7',title:'Book Conrad Makkah — 3 rooms (per Gate B)',who:'Hossam, Shereen & Salma',due:'This week',tel:'$191/nt'},
-  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms CASH + 1 FNC',who:'Adults 1–4',due:'This week',tel:'SAR 17,857 (~$4,762)',note:'At 73K pts/night, cash beats points. Rooms 1–3 @ SAR 4,805.85; Room 4 @ SAR 4,298.70. Apply remaining (4th) FNC to 1 room → saves SAR 860–961 (1 free night). Charge all rooms to respective Aspire cards (14×). Optional: use 44K existing pts via Points & Money on 1 room for ~$150 off.'},
+  {type:'task',id:'T7',title:'Conrad Makkah — 3 rooms BOOKED (3 FNCs deployed)',who:'Hossam, Shereen & Salma',due:'Done',tel:'$191/nt'},
+  {type:'task',id:'T8',title:'Book Madinah Hilton — 4 rooms CASH + 1 FNC',who:'Adults 1–4',due:'Before 6/21',tel:'SAR 17,857 (~$4,762)',note:'At 73K pts/night, cash beats points. Rooms 1–3 @ SAR 4,805.85; Room 4 @ SAR 4,298.70. Apply remaining (4th) FNC to 1 room → saves SAR 860–961 (1 free night). Charge all rooms to respective Aspire cards (14×). Optional: use 44K existing pts via Points & Money on 1 room for ~$150 off.'},
   {type:'task',id:'T9',title:'Le Méridien Cairo Airport — 3 rooms BOOKED w/ AA miles (7/11)',who:'Hossam',due:'Done',tel:'AAdvantage Hotels',val:'AA miles',note:'3 separate single-room bookings via AAdvantage Hotels (Rocket Travel/Agoda) for cancellation flexibility. Redeemed AA miles (~1cpp). Le Méridien is MARRIOTT — no Hilton benefit. Only need ~21:10–04:30.'},
-  {type:'task',id:'T10',title:'Book regional flights: CAI→SSH, Saudia SV 326, flynas XY 576',who:'Hossam',due:'This week',note:'On Aspires (7×). VERIFY flynas fare includes bags + 5L Zamzam.'},
-  {type:'task',id:'T11',title:'Book ground transport: van JED→Conrad, HSR Makkah→Madinah',who:'Hossam',due:'This week',tel:'van ~$220'},
-  {type:'task',id:'T12',title:'Buy supplemental travel insurance (regional-flight gap)',who:'Hossam',due:'This week',tel:'~$300–500',note:'Aspire trip insurance needs entire round-trip on card; regional one-ways aren\'t covered.'},
+  {type:'task',id:'T10',title:'Regional flights BOOKED: CAI→SSH, Saudia SV 326, flynas XY 576',who:'Hossam',due:'Done',note:'On Aspires (7×). VERIFY flynas fare includes bags + 5L Zamzam.'},
+  {type:'task',id:'T11',title:'Book Haramain Taxi Package 1: KAIA→Conrad + Makkah→Madinah + Madinah→Airport (Hiace)',who:'Hossam',due:'Before 6/21',tel:'SAR 975 (~$260)'},
+  {type:'task',id:'T12',title:'Buy supplemental travel insurance (regional-flight gap)',who:'Hossam',due:'Before 6/21',tel:'~$300–500',note:'Aspire trip insurance needs entire round-trip on card; regional one-ways aren\'t covered.'},
 ]},
 {id:'w2',tag:'Wave 2',cls:'normal',title:'Ongoing — Start Now, Runs for Weeks',sub:'Spend, certs, and enrollments',items:[
   {type:'task',id:'T13',title:'Front-load $6,000 spend on EACH of 4 Aspires (normal spend)',who:'Adults 1–4',due:'ASAP',val:'→ 700K pts',note:'Welcome points fund the Madinah stay (1A). Complete early. Use the Benefits Tracker tab →'},
-  {type:'task',id:'T14',title:'Monitor all 4 Aspire Honors accounts DAILY for cert posting',who:'Adults 1–4',due:'Daily',note:'Time-based, no spend req; post ~8–14 wks after 4/6 (≈ Jun 1–Jul 13).'},
-  {type:'gate',id:'GC',tag:'Decision Gate C',q:'Cert posting timing vs Conrad window (7/2)',opts:[
-    {if:'Posted by ~6/28',then:'Use as planned: Hossam, Shereen & Salma at Conrad ($191/nt), Omar at DoubleTree ($77). Book via 1-800-446-6677. $650 saved.'},
-    {if:'NOT posted by 6/15',then:'Call Amex 800-528-4800 + Hilton 1-800-446-6677 to expedite.'},
-    {if:'Posts after 7/2',then:'Misses Conrad. Fallback: DoubleTree if in window; don\'t put at Madinah (breaks 5NF).'},
+  {type:'task',id:'T14',title:'Cert posting — DONE (all 4 certs posted)',who:'Adults 1–4',due:'Done',note:'3 deployed at Conrad, 4th targeting Madinah Hilton.'},
+  {type:'gate',id:'GC',tag:'Decision Gate C — CLOSED',q:'Cert posting — RESOLVED. All 4 certs posted and deployed.',opts:[
+    {if:'Status',then:'3 FNCs deployed at Conrad Makkah (done). 4th FNC targeting Madinah Hilton.'},
   ]},
-  {type:'task',id:'T15',title:'Check Conrad standard-room AWARD availability 7/2–7/6',who:'Hossam',due:'This week',note:'Cert needs standard award space. Toggle "Use Points" on hilton.com.'},
-  {type:'task',id:'T16',title:'Book cert award nights via 1-800-446-6677 when posted',who:'Adults 1–4',due:'On posting',note:'Online won\'t apply certs. 3 Conrad + 1 DoubleTree.'},
-  {type:'task',id:'T17',title:'Enroll 4 people in CLEAR Plus (pay with each Aspire)',who:'Adults 1–4',due:'Before 6/21',val:'up to $209/ea',note:'Instant at CLT. US airports only.'},
+  {type:'task',id:'T15',title:'Conrad award availability — DONE (3 FNCs deployed)',who:'Hossam',due:'Done',note:'3 certs booked at Conrad via 1-800-446-6677.'},
+  {type:'task',id:'T16',title:'Cert deployment: 3 Conrad DONE + 1 Madinah Hilton (pending)',who:'Adults 1–4',due:'Before Madinah',note:'3 FNCs deployed at Conrad (done). 4th FNC: apply to 1 room at Madinah Hilton via 1-800-446-6677.'},
   {type:'task',id:'T18',title:'Pay a phone bill with Aspire (cell-phone protection)',who:'Adults 1–4',due:'Before trip',val:'~$800/claim'},
   {type:'task',id:'T19',title:'Apply for Global Entry (Hossam) — for FUTURE trips',who:'Hossam',due:'Anytime',tel:'$120 Citi credit',note:'Won\'t clear before 6/21.'},
   {type:'task',id:'T20',title:'Attend vaccine appointments + collect ICVP / yellow card',who:'All 8',due:'Per clinic',note:'Meningococcal (mandatory), Hep A, Typhoid, Polio, verify MMR.'},
 ]},
 {id:'w3',tag:'Wave 3',cls:'normal',title:'Pre-Departure — Week Before 6/21',sub:'Final confirmations, upgrades, activities',items:[
-  {type:'task',id:'T21',title:'Apply each Aspire $200 flight credit to seats/bags/Wi-Fi',who:'Adults 1–4',due:'At seat selection',val:'$800 total'},
-  {type:'gate',id:'GD',tag:'Decision Gate D',q:'AA miles: 1A Le Méridien redemption FIRST — then upgrade AA 730/735?',opts:[
-    {if:'1A first — redeem for Le Méridien (T9)',then:'Use ~32–68K miles via AAdvantage Hotels to cut hotel cash (1A). ~110K remain.'},
-    {if:'Then 1B — Main Cabin + Business "C" space',then:'Upgrade remaining miles: ~25K + ~$350 copay/segment. Copay is cash out (1B).'},
-    {if:'Basic Economy / no space / skip copay',then:'No upgrade. Miles best spent on Le Méridien 1A redemption.'},
+  {type:'task',id:'T21',title:'Use remaining $50 Aspire flight credit — AA Wi-Fi or cheap refundable ticket',who:'Hossam',due:'During trip',val:'$50 remaining',note:'All regional flights on 1 Aspire; other cards Q1/Q2 expired. Best use: AA in-flight Wi-Fi on transatlantic leg (billed by AA) or book cheap refundable AA ticket, get credit, cancel for AA flight credit. Must charge directly to airline.'},
+  {type:'gate',id:'GD',tag:'Decision Gate D',q:'AA miles — Le Méridien DONE; upgrade AA 730/735 still open',opts:[
+    {if:'Le Méridien (T9) — DONE',then:'3 rooms booked with AA miles via AAdvantage Hotels. 1A complete.'},
+    {if:'1B — Check Business upgrade space on AA 730/735',then:'~25K miles + ~$350 copay/segment. Check availability ~1 week out (T22).'},
+    {if:'No space / skip copay',then:'Keep remaining miles for future use.'},
   ]},
   {type:'task',id:'T22',title:'Check AA 730/735 Business upgrade space + execute',who:'Hossam',due:'~1 wk out',tel:'800-882-8880'},
   {type:'task',id:'T23',title:'Check Loyalty-Point balance vs 40K Gold',who:'Hossam',due:'Anytime',note:'Flying the trip may push past Gold.'},
@@ -1458,7 +1475,7 @@ const __ITIN_SEED=[
 {date:'Jun 21',day:'Sun',loc:'transit',title:'Departure',items:[
   {t:'flight',v:'✈ AA 730 CLT→LHR (evening)'},
   {t:'act',v:'Admirals Club at CLT (all 4 Citi cardholders + guests)'},
-  {t:'act',v:'CLEAR Plus security at CLT'},
+  {t:'alert',v:'5:10 AM CLT: BA 396 24-hr check-in opens (departs LHR 10:10 BST Jun 22). Select seats on ba.com with BA record locator.'},
 ]},
 {date:'Jun 22',day:'Mon',loc:'cairo',title:'6 Pax Arrive Cairo',items:[
   {t:'flight',v:'✈ BA 396 LHR→CAI arr ~17:25 Terminal 2 (6 of 8 pax)'},
@@ -1523,6 +1540,7 @@ const __ITIN_SEED=[
   {t:'act',v:'~9:00 PM — Return to hotel, pack for Makkah (depart tomorrow)'},
 ]},
 {date:'Jul 2',day:'Thu',loc:'makkah',title:'Transfer to Makkah',items:[
+  {t:'alert',v:'⚠️ IHRAM: Enter ihram BEFORE boarding at SSH. Miqat = Al-Juhfah/Rabigh (crossed in-flight). No airline announcement.'},
   {t:'flight',v:'✈ Saudia SV 326 SSH→JED dep ~16:27'},
   {t:'act',v:'🚐 Private van JED→Conrad (~$220)'},
   {t:'hotel',v:'🏨 Conrad Jabal Omar Makkah check-in (3 rooms, 4 nights)'},
@@ -1539,8 +1557,8 @@ const __ITIN_SEED=[
   {t:'act',v:'Last full Makkah day · pack for Madinah'},
 ]},
 {date:'Jul 6',day:'Mon',loc:'madinah',title:'Transfer to Madinah',items:[
-  {t:'act',v:'🚄 HSR Economy Makkah→Madinah (~$310 + ~$50 taxis)'},
-  {t:'hotel',v:'🏨 Madinah Hilton check-in (4 rooms, 5 nights, points)'},
+  {t:'act',v:'🚐 Haramain Taxi Hiace: Makkah→Madinah (part of SAR 975 package)'},
+  {t:'hotel',v:'🏨 Madinah Hilton check-in (4 rooms, 5 nights, cash + 1 FNC)'},
   {t:'act',v:"Prophet's Mosque evening visit"},
 ]},
 {date:'Jul 7',day:'Tue',loc:'madinah',title:'Madinah — Rawdah',items:[
