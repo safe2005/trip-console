@@ -106,6 +106,10 @@ tr:last-child td{border-bottom:none}
 .t-id{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;color:var(--faint);font-weight:600}
 .t-title{font-size:14.5px;font-weight:600;letter-spacing:-.005em}
 .task.done .t-title{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.task.na{opacity:.55}
+.task.na .t-title{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.cbox.na-box{cursor:default;border-style:dashed;background:transparent;border-color:var(--border2);color:var(--faint);font-weight:700;font-size:13px}
+.t-na{display:inline-block;margin-left:2px;font-size:9.5px;font-weight:700;letter-spacing:.6px;color:var(--faint);border:1px solid var(--border2);border-radius:5px;padding:1px 5px;vertical-align:middle}
 .t-note{font-size:12.5px;color:var(--muted);margin-top:4px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .chip{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:10.5px;padding:3px 8px;border-radius:6px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);display:inline-flex;gap:5px;align-items:center}
@@ -1270,7 +1274,7 @@ const PHASES=[
   ]},
   {type:'task',id:'T15',title:'Conrad award availability — DONE (3 FNCs deployed)',who:'Traveler 1',due:'Done',note:'3 certs booked at Conrad via 1-800-446-6677.'},
   {type:'task',id:'T16',title:'Cert deployment: 3 Conrad DONE + 1 Madinah Hilton (pending)',who:'Adults 1–4',due:'Before Madinah',note:'3 FNCs deployed at Conrad (done). 4th FNC: apply to 1 room at Madinah Hilton via 1-800-446-6677.'},
-  {type:'task',id:'T18',title:'Pay a phone bill with Aspire (cell-phone protection)',who:'Adults 1–4',due:'Before trip',val:'~$800/claim'},
+  {type:'task',id:'T18',na:1,title:'Pay a phone bill with Aspire (cell-phone protection)',who:'Adults 1–4',due:'N/A',note:'Dropped after analysis — consumer Aspire cell-phone protection excludes business/commercial-use phones, and paying the 6-line business T-Mobile bill by card forfeits ~$360/yr AutoPay discount. Coverage would not apply.'},
   {type:'task',id:'T19',title:'Apply for Global Entry (Traveler 1) — for FUTURE trips',who:'Traveler 1',due:'Anytime',tel:'$120 Citi credit',note:'Won\'t clear before 6/21.'},
   {type:'task',id:'T20',title:'Attend vaccine appointments + collect ICVP / yellow card',who:'All 8',due:'Per clinic',note:'Meningococcal (mandatory), Hep A, Typhoid, Polio, verify MMR.'},
 ]},
@@ -1298,19 +1302,19 @@ const PHASES=[
 ]},
 ];
 
-function allTasks(){return PHASES.flatMap(p=>p.items.filter(i=>i.type==='task'))}
+function allTasks(){return PHASES.flatMap(p=>p.items.filter(i=>i.type==='task'&&!i.na))}
 function isUrgent(p){return p.cls==='critical'||p.cls==='soon'}
 function refreshProgress(){
   const tasks=allTasks(),done=tasks.filter(t=>aState.tasks[t.id]).length,tot=tasks.length,pct=tot?Math.round(done/tot*100):0;
   document.getElementById('doneCount').textContent=done;document.getElementById('totCount').textContent=tot;document.getElementById('ringPct').textContent=pct+'%';
   const C=144.5;document.getElementById('ringFg').style.strokeDashoffset=C-(C*pct/100);
-  PHASES.forEach(p=>{const pt=p.items.filter(i=>i.type==='task');const pd=pt.filter(t=>aState.tasks[t.id]).length;const el=document.querySelector(`#prog-${p.id}`);if(el)el.textContent=`${pd}/${pt.length}`});
+  PHASES.forEach(p=>{const pt=p.items.filter(i=>i.type==='task'&&!i.na);const pd=pt.filter(t=>aState.tasks[t.id]).length;const el=document.querySelector(`#prog-${p.id}`);if(el)el.textContent=`${pd}/${pt.length}`});
 }
 function chip(cls,t){return `<span class="chip ${cls}">${t}</span>`}
 function taskHTML(t){
   const done=aState.tasks[t.id]?'done':'';let chips='';
   if(t.who)chips+=chip('who','◦ '+t.who);if(t.due)chips+=chip('due'+(t.crit?' crit':''),'⏱ '+t.due);if(t.tel)chips+=chip('tel','✆ '+t.tel);if(t.val)chips+=chip('val','✓ '+t.val);
-  return `<div class="task ${done}" data-tid="${t.id}" data-urgent="${t._u}"><div class="cbox" data-check="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg></div><div class="t-body"><div class="t-top"><span class="t-id">${t.id}</span><span class="t-title">${t.title}</span></div>${t.note?`<div class="t-note">${t.note}</div>`:''} ${chips?`<div class="chips">${chips}</div>`:''}</div></div>`;
+  return `<div class="task ${done}${t.na?' na':''}" data-tid="${t.id}" data-urgent="${t._u}">${t.na?`<div class="cbox na-box" title="Not applicable">—</div>`:`<div class="cbox" data-check="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.5"><path d="M5 12l5 5L20 6"/></svg></div>`}<div class="t-body"><div class="t-top"><span class="t-id">${t.id}</span><span class="t-title">${t.title}</span>${t.na?`<span class="t-na">N/A</span>`:''}</div>${t.note?`<div class="t-note">${t.note}</div>`:''} ${chips?`<div class="chips">${chips}</div>`:''}</div></div>`;
 }
 function gateHTML(g){
   const ch=aState.gates[g.id];
@@ -1318,7 +1322,7 @@ function gateHTML(g){
 }
 function renderActions(){
   const root=document.getElementById('phases');root.innerHTML='';
-  PHASES.forEach(p=>{const u=isUrgent(p);p.items.forEach(i=>i._u=u?'1':'0');const body=p.items.map(i=>i.type==='task'?taskHTML(i):gateHTML(i)).join('');const pt=p.items.filter(i=>i.type==='task');const pd=pt.filter(t=>aState.tasks[t.id]).length;const d=document.createElement('div');d.className=`phase ${p.cls}`;d.id='ph-'+p.id;
+  PHASES.forEach(p=>{const u=isUrgent(p);p.items.forEach(i=>i._u=u?'1':'0');const body=p.items.map(i=>i.type==='task'?taskHTML(i):gateHTML(i)).join('');const pt=p.items.filter(i=>i.type==='task'&&!i.na);const pd=pt.filter(t=>aState.tasks[t.id]).length;const d=document.createElement('div');d.className=`phase ${p.cls}`;d.id='ph-'+p.id;
   d.innerHTML=`<div class="phase-head" data-toggle="${p.id}"><span class="wave-tag">${p.tag}</span><div class="phase-titles"><div class="phase-title">${p.title}</div><div class="phase-sub">${p.sub}</div></div><span class="phase-prog" id="prog-${p.id}">${pd}/${pt.length}</span><span class="chev">▼</span></div><div class="phase-body">${body}</div>`;root.appendChild(d)});
   bindActions();applyFilter();refreshProgress();
 }
