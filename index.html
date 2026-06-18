@@ -497,6 +497,52 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
   letter-spacing:.01em;box-shadow:0 8px 32px rgba(0,0,0,.35);pointer-events:none;opacity:0;
   transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s ease}
 .qa-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ---- dedup / reconcile ---- */
+.dedup-wrap{margin-top:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);padding:14px}
+.dedup-banner{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-weight:600;font-size:.92rem}
+.dedup-head{font-size:.95rem;margin-bottom:10px;color:var(--text)}
+.dedup-head .dp-high-txt{color:var(--critical);font-weight:600}
+.dedup-head .dp-med-txt{color:var(--soon);font-weight:600}
+.dedup-head .dp-low-txt{color:var(--muted)}
+.dedup-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.dedup-bar .spacer{flex:1}
+.dedup-sel-count{color:var(--muted);font-size:.85rem;margin-right:4px}
+.dedup-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.dedup-table th,.dedup-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border2);vertical-align:top}
+.dedup-table th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+.dedup-pill{display:inline-block;min-width:46px;text-align:center;padding:2px 8px;border-radius:999px;font-weight:700;font-size:.82rem}
+.dp-high{background:var(--crit-bg);color:var(--critical)}
+.dp-med{background:var(--soon-bg);color:var(--soon)}
+.dp-low{background:var(--surface);color:var(--muted)}
+.dedup-match{line-height:1.35;color:var(--text)}
+.dedup-faint{color:var(--faint)}
+.dedup-why{margin-top:3px;color:var(--muted);font-size:.8rem}
+.dedup-arrow{color:var(--faint);text-align:center;font-size:1.1rem;vertical-align:middle}
+.dedup-pick-cell{width:34px;text-align:center}
+.dedup-empty{color:var(--muted);padding:18px 6px;text-align:center;line-height:1.5}
+.dedup-note{margin-top:10px;color:var(--muted);font-size:.8rem;line-height:1.5}
+tr.dedup-dup-row td{background:var(--crit-bg)}
+/* ---- benefits rollup + card extras ---- */
+.ben-rollup{margin:10px 0 4px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);padding:12px 14px}
+.ben-rollup-stats{display:flex;flex-wrap:wrap;gap:18px}
+.ben-rollup-stats .brs{min-width:90px}
+.brs-v{font-size:1.15rem;font-weight:700;color:var(--text)}
+.brs-v.brs-pending{color:var(--soon)}
+.brs-l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:2px}
+.ben-next{margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-size:.9rem;color:var(--text)}
+.ben-next-done{color:var(--ok)}
+.card-extra{margin-top:6px;font-size:.8rem}
+.card-rem{color:var(--soon);font-weight:600}
+.card-met{color:var(--ok);font-weight:600}
+.card-dl{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.card-dl label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.card-dl input[type=date]{font-size:.78rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
+.card-pace{font-size:.74rem;font-weight:700;padding:1px 7px;border-radius:999px}
+.card-pace.ok{background:var(--ok-bg);color:var(--ok)}
+.card-pace.soon{background:var(--soon-bg);color:var(--soon)}
+.card-pace.critical{background:var(--crit-bg);color:var(--critical)}
+
 </style>
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tc_theme')||'dark')</script>
 </head>
@@ -568,6 +614,7 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
 <div class="panel" id="panel-benefits">
   <div class="section-title" style="border:none;margin-top:12px">Card Spend vs Welcome-Bonus Targets</div>
   <div class="section-sub">Track spending on each card toward the $6,000 (Aspire) / $7,000 (Citi) thresholds to capture ~770K in welcome-bonus points.</div>
+  <div class="ben-rollup" id="benRollup"></div>
   <div class="cards-grid" id="cardsGrid"></div>
 
   <div class="section-title">Points & Miles Balances</div>
@@ -672,6 +719,11 @@ body.lowdata .phase,body.lowdata .card,body.lowdata .day-card,body.lowdata .ref-
       <span style="font-size:12px;color:var(--muted)">Amex or Citi statement export. Charges import; payments &amp; credits are skipped automatically.</span>
     </div>
     <div id="impStaging" style="display:none"></div>
+    <div class="report-row" style="margin-top:10px">
+      <button class="btn btn-add" onclick="openDedup()">&#128269; Reconcile duplicates</button>
+      <span style="font-size:12px;color:var(--muted)">Compare imported rows against expenses already in your tracker and flag likely duplicates to remove.</span>
+    </div>
+    <div id="dedupPanel" class="dedup-wrap" style="display:none"></div>
   </div>
 </div>
 
@@ -1342,10 +1394,19 @@ document.getElementById('resetBtn').addEventListener('click',async()=>{if(!confi
 // ===================== BENEFITS TRACKER =====================
 function cardSpend(cid){const manual=bData.txs.filter(t=>t.card===cid).reduce((s,t)=>s+t.amount,0);const fromExp=(eData.expenses||[]).filter(e=>{const pm=PAY_METHODS.find(p=>p.id===e.payMethod);return pm&&pm.cardId===cid}).reduce((s,e)=>s+e.usdAmount,0);return manual+fromExp}
 function renderCards(){
-  const g=document.getElementById('cardsGrid');g.innerHTML='';
-  CARDS.forEach(c=>{const sp=cardSpend(c.id),pct=Math.min(100,Math.round(sp/c.target*100)),ov=sp>=c.target;
-  g.innerHTML+=`<div class="card"><div class="card-name"><span>${c.name}</span><span class="card-pct" style="color:${ov?'var(--ok)':c.color}">${pct}%${ov?' ✓':''}</span></div><div class="prog-bg"><div class="prog-fg" style="width:${pct}%;background:${ov?'var(--ok)':c.color}"></div></div><div class="card-stats"><span class="amt">$${sp.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})}</span><span>of $${c.target.toLocaleString()}</span></div></div>`});
-  if(document.getElementById('bTbody'))renderBenefitTx();   // keep the contributing-transactions list in sync with card spend
+  const g=document.getElementById('cardsGrid');if(!g)return;g.innerHTML='';
+  CARDS.forEach(c=>{
+    const sp=cardSpend(c.id),pct=Math.min(100,Math.round(sp/c.target*100)),ov=sp>=c.target;
+    const rem=_cardRemaining(c),dl=_cardDeadline(c.id),pace=_cardPace(c);
+    let extra=ov?'<span class="card-met">&#10003; Minimum met &mdash; extra spend earns no more bonus</span>':'<span class="card-rem">$'+Math.round(rem).toLocaleString()+' to go</span>';
+    let dlrow='<div class="card-dl"><label>Min by</label><input type="date" value="'+dl+'" onchange="setCardDeadline(\''+c.id+'\',this.value)">';
+    if(pace&&!pace.met){const lbl=pace.days<0?(Math.abs(pace.days)+'d overdue'):(pace.days+'d &middot; $'+Math.round(pace.perDay).toLocaleString()+'/day');dlrow+='<span class="card-pace '+pace.status+'">'+lbl+'</span>';}
+    else if(pace&&pace.met){dlrow+='<span class="card-pace ok">done</span>';}
+    dlrow+='</div>';
+    g.innerHTML+='<div class="card"><div class="card-name"><span>'+esc(c.name)+'</span><span class="card-pct" style="color:'+(ov?'var(--ok)':c.color)+'">'+pct+'%'+(ov?' \u2713':'')+'</span></div><div class="prog-bg"><div class="prog-fg" style="width:'+pct+'%;background:'+(ov?'var(--ok)':c.color)+'"></div></div><div class="card-stats"><span class="amt">$'+sp.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})+'</span><span>of $'+c.target.toLocaleString()+'</span></div><div class="card-extra">'+extra+'</div>'+dlrow+'</div>';
+  });
+  if(document.getElementById('bTbody'))renderBenefitTx();
+  renderBenRollup();
 }
 function renderBenefitTx(){
   const tb=document.getElementById('bTbody');
@@ -1944,12 +2005,12 @@ function _renderImportStaging(){
   const s=document.getElementById('impStaging');const p=_importParsed;
   if(!p||!p.format){if(s){s.style.display='none';s.innerHTML=''}alert('Could not recognize this CSV. Expected an American Express or Citi statement export.');return}
   if(!p.charges.length){s.style.display='none';s.innerHTML='';alert(p.format+' file recognized, but it contained no charges to import ('+p.skipped+' payment/credit rows).');return}
-  const payOpts=allPays().map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  const payOpts='<option value="__auto__">Auto \u2014 match cardholder on statement</option>'+allPays().map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   const catOpts='<option value="__imported__">Imported (review)</option>'+allCats().map(c=>`<option value="${c}">${c}</option>`).join('');
   const purOpts='<option value="">— none —</option>'+PURCHASERS.map(x=>`<option value="${x}">${x}</option>`).join('');
-  const rowsHtml=p.charges.map((c,i)=>`<tr><td style="text-align:center"><input type="checkbox" class="imp-row" data-idx="${i}" checked></td><td class="mono" style="font-size:11px">${c.date}</td><td style="font-size:11px">${(c.desc.length>50?c.desc.slice(0,50)+'…':c.desc).replace(/</g,'&lt;')}</td><td class="mono">$${c.amount.toLocaleString('en',{minimumFractionDigits:2})}</td></tr>`).join('');
+  const rowsHtml=p.charges.map((c,i)=>`<tr><td style="text-align:center"><input type="checkbox" class="imp-row" data-idx="${i}" checked></td><td class="mono" style="font-size:11px">${c.date}</td><td style="font-size:11px">${(c.desc.length>50?c.desc.slice(0,50)+'…':c.desc).replace(/</g,'&lt;')}</td><td class="mono">$${c.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td style="font-size:11px;color:var(--muted)">${esc(_impRowCardName(c,p.format))}</td></tr>`).join('');
   s.innerHTML=`
-    <div style="margin:12px 0;font-size:13px"><b>${p.format}</b> detected · <b>${p.charges.length}</b> charge(s) ready to import · <span style="color:var(--muted)">${p.skipped} payment/credit row(s) skipped</span></div>
+    <div style="margin:12px 0;font-size:13px"><b>${p.format}</b> detected · <b>${p.charges.length}</b> charge(s) ready to import · <span style="color:var(--muted)">${p.skipped} payment/credit row(s) skipped</span></div><div style="margin:4px 0 0;font-size:11px;color:var(--muted)">Each charge is auto-assigned to the cardholder named on the statement (see &ldquo;&rarr; Card&rdquo;). Pick a specific card above to assign all rows to one card instead.</div>
     <div class="report-row">
       <label>Card</label><select id="impPay">${payOpts}</select>
       <label>Category</label><select id="impCat">${catOpts}</select>
@@ -1958,18 +2019,18 @@ function _renderImportStaging(){
       <label>Responsible</label><input type="text" id="impResp" placeholder="Applied to all (optional)">
       <label>Purchaser</label><select id="impPurch">${purOpts}</select>
     </div>
-    <div class="tbl-wrap" style="max-height:280px;overflow:auto;margin-top:6px"><table><thead><tr><th style="text-align:center"><input type="checkbox" id="impAll" checked onclick="document.querySelectorAll('.imp-row').forEach(c=>c.checked=this.checked)"></th><th>Date</th><th>Description</th><th>Amount</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+    <div class="tbl-wrap" style="max-height:280px;overflow:auto;margin-top:6px"><table><thead><tr><th style="text-align:center"><input type="checkbox" id="impAll" checked onclick="document.querySelectorAll('.imp-row').forEach(c=>c.checked=this.checked)"></th><th>Date</th><th>Description</th><th>Amount</th><th title="Auto-matched from the cardholder named on each statement row. Choose a specific card above to override all rows.">&rarr; Card</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
     <div class="report-row" style="margin-top:10px">
       <button class="btn btn-add" onclick="doImport()">Import selected</button>
       <button class="btn btn-clear" onclick="cancelImport()">Cancel</button>
     </div>`;
   s.style.display='block';
-  const defPay=p.format==='Amex'?'aspire1':'citi1';const ps=document.getElementById('impPay');if([...ps.options].some(o=>o.value===defPay))ps.value=defPay;
+  const ps=document.getElementById('impPay');if([...ps.options].some(o=>o.value==='__auto__'))ps.value='__auto__';
   s.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function doImport(){
   const p=_importParsed;if(!p||!p.charges.length)return;
-  const payId=document.getElementById('impPay').value;const pm=allPays().find(x=>x.id===payId);const payName=pm?pm.name:payId;
+  const selPay=document.getElementById('impPay').value;
   let cat=document.getElementById('impCat').value;if(cat==='__imported__')cat='Imported (review)';
   const resp=document.getElementById('impResp').value.trim();
   const purch=document.getElementById('impPurch').value;
@@ -1978,12 +2039,278 @@ function doImport(){
   if(cat&&!(eData.cats||[]).includes(cat)){if(!eData.cats)eData.cats=[...__CAT_SEED];eData.cats.push(cat);if(eData.budgets[cat]===undefined)eData.budgets[cat]=0}
   const stamp=Date.now().toString(36);let added=0;
   idxs.forEach(i=>{const c=p.charges[i];if(!c)return;const iso=_csvDateToISO(c.date);
-    eData.expenses.push({id:'imp'+stamp+'_'+i,category:cat,currency:'USD',amount:c.amount,usdAmount:c.amount,desc:c.desc,purchaser:purch,responsible:resp,payMethod:payId,payName:payName,dueDate:'',svcDate:iso,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});added++});
+    const rp=(selPay==='__auto__')?_resolveCardId(c,p.format):selPay;const rpm=allPays().find(x=>x.id===rp);const rpn=rpm?rpm.name:rp;
+    eData.expenses.push({id:'imp'+stamp+'_'+i,category:cat,currency:'USD',amount:c.amount,usdAmount:c.amount,desc:c.desc,purchaser:purch,responsible:resp,payMethod:rp,payName:rpn,dueDate:'',svcDate:iso,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});added++});
   cancelImport();
   rebuildCatSelects();renderBudgetGrid();renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE();
-  alert('Imported '+added+' expense'+(added===1?'':'s')+' — assigned to '+(pm?pm.name:'(none)')+'. Edit any row in the report to adjust.');
+  _dedupJustImported=added;openDedup();
 }
 function cancelImport(){_importParsed=null;const s=document.getElementById('impStaging');if(s){s.style.display='none';s.innerHTML=''}}
+
+
+/* ===================== IMPORT CARD ROUTING + BENEFITS EXTRAS ===================== */
+function _impCardPool(format){
+  const pre=format==='Amex'?'aspire':(format==='Citi'?'citi':null);
+  if(!pre)return [];
+  return PAY_METHODS.filter(m=>m.id.indexOf(pre)===0 && m.id!=='__other_pay__');
+}
+function _cardPerson(name){
+  const parts=String(name||'').split('\u2014'); // em dash separates product from person
+  if(parts.length<2)return '';
+  return (parts[1].toLowerCase().replace(/\(.*?\)/g,' ').replace(/[^a-z ]+/g,' ').trim().split(' ').filter(Boolean)[0])||'';
+}
+function _resolveCardId(charge, format){
+  const pool=_impCardPool(format);
+  if(!pool.length)return format==='Amex'?'aspire1':(format==='Citi'?'citi1':'cash');
+  const mem=String(charge&&charge.member||'').toLowerCase();
+  if(mem){for(const m of pool){const p=_cardPerson(m.name);if(p&&mem.indexOf(p)!==-1)return m.id}}
+  return pool[0].id;
+}
+function _resolveCardName(charge, format){
+  const id=_resolveCardId(charge,format);
+  const pm=PAY_METHODS.find(x=>x.id===id);
+  return pm?pm.name:id;
+}
+function _impRowCardName(charge, format){
+  const nm=_resolveCardName(charge,format);
+  const mem=String(charge&&charge.member||'').trim();
+  return mem?(nm+' \u00b7 ('+mem+')'):nm;
+}
+/* ---- benefits: remaining, deadlines, pace, rollup ---- */
+function _cardRemaining(c){return Math.max(0, c.target-cardSpend(c.id))}
+function _cardDeadline(cid){return (bData.deadlines||{})[cid]||''}
+function setCardDeadline(cid,val){if(!bData.deadlines)bData.deadlines={};if(val)bData.deadlines[cid]=val;else delete bData.deadlines[cid];saveB();renderCards();renderPoints()}
+function _daysUntil(iso){if(!iso||!/^\d{4}-\d{2}-\d{2}/.test(iso))return null;const d=new Date(iso+'T00:00:00');if(isNaN(d))return null;const now=new Date();now.setHours(0,0,0,0);return Math.round((d-now)/86400000)}
+function _cardPace(c){
+  const days=_daysUntil(_cardDeadline(c.id));
+  if(days===null)return null;
+  const rem=_cardRemaining(c);
+  if(rem<=0)return {days,rem:0,perDay:0,met:true,status:'ok'};
+  let status='ok';
+  if(days<0)status='critical';
+  else if(days<=7)status='critical';
+  else if(days<=21)status='soon';
+  return {days,rem,perDay:rem/Math.max(1,days),met:false,status};
+}
+function renderBenRollup(){
+  const el=document.getElementById('benRollup');if(!el)return;
+  let spend=0,remaining=0;
+  CARDS.forEach(c=>{spend+=cardSpend(c.id);remaining+=_cardRemaining(c)});
+  let earned=0,pending=0,ptsEarned=0,ptsPending=0;
+  POINT_ACCOUNTS.forEach(a=>{if(!a.src||!a.bonus)return;const bs=getBonusStatus(a);if(bs.earned){earned++;ptsEarned+=a.bonus}else{pending++;ptsPending+=a.bonus}});
+  const unmet=CARDS.filter(c=>_cardRemaining(c)>0);
+  unmet.sort((a,b)=>{
+    const da=_daysUntil(_cardDeadline(a.id)),db=_daysUntil(_cardDeadline(b.id));
+    if(da!==null&&db!==null&&da!==db)return da-db;
+    if(da!==null&&db===null)return -1;
+    if(da===null&&db!==null)return 1;
+    return _cardRemaining(a)-_cardRemaining(b);
+  });
+  const f=n=>'$'+Math.round(n).toLocaleString();
+  let next;
+  if(unmet.length){
+    const c=unmet[0],dd=_daysUntil(_cardDeadline(c.id));
+    next='<div class="ben-next">Put next spend on <b>'+esc(c.name)+'</b> &mdash; '+f(_cardRemaining(c))+' to go'+(dd!==null?(dd<0?(' &middot; <span class="card-pace critical">'+Math.abs(dd)+'d overdue</span>'):(' &middot; '+dd+' days left')):'')+'</div>';
+  } else {
+    next='<div class="ben-next ben-next-done">&#10003; All card minimums met &mdash; further spend earns no additional welcome bonus.</div>';
+  }
+  el.innerHTML='<div class="ben-rollup-stats">'
+    +'<div class="brs"><div class="brs-v">'+f(spend)+'</div><div class="brs-l">spent across '+CARDS.length+' cards</div></div>'
+    +'<div class="brs"><div class="brs-v">'+f(remaining)+'</div><div class="brs-l">left to all minimums</div></div>'
+    +'<div class="brs"><div class="brs-v">'+earned+' / '+(earned+pending)+'</div><div class="brs-l">welcome bonuses earned</div></div>'
+    +'<div class="brs"><div class="brs-v">'+ptsEarned.toLocaleString()+'</div><div class="brs-l">bonus pts/mi secured</div></div>'
+    +(ptsPending>0?('<div class="brs"><div class="brs-v brs-pending">'+ptsPending.toLocaleString()+'</div><div class="brs-l">still at stake</div></div>'):'')
+    +'</div>'+next;
+}
+/* ===================== DEDUP / RECONCILE ===================== */
+const DEDUP_REVIEW_CAT='Imported (review)';
+const DEDUP_HIGH=80, DEDUP_MED=55;
+let _dedupJustImported=0;
+const _DEDUP_STOP=new Set(['the','of','and','llc','inc','co','ltd','corp','com','store','shop','payment','purchase','intl','international','online','card','debit','credit','usa','us','eg','egypt','sa','ksa','cairo','jed','makkah','madinah','mktp','dept']);
+function _dedupNorm(s){
+  s=String(s==null?'':s).toLowerCase();
+  s=s.replace(/https?:\/\/\S+/g,' ').replace(/www\.\S+/g,' ');
+  s=s.replace(/\b[a-z]{1,6}\s*\*\s*/g,' ');
+  s=s.replace(/\*/g,' ');
+  s=s.replace(/[#0-9][#0-9.]*/g,' ');
+  s=s.replace(/[^a-z0-9 ]+/g,' ');
+  return s.replace(/\s+/g,' ').trim();
+}
+function _dedupTokens(s){return _dedupNorm(s).split(' ').filter(t=>t.length>1 && !_DEDUP_STOP.has(t))}
+function _dedupMoney(x){return '$'+(Math.round((+x||0)*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function _dedupAmountScore(a,b){
+  a=Math.abs(+a||0); b=Math.abs(+b||0);
+  const d=Math.abs(a-b), base=Math.max(a,b,0.01), rel=d/base;
+  if(d<=0.02||rel<=0.001)return 1;
+  if(rel<=0.02)return 0.9;
+  if(rel<=0.05)return 0.6;
+  if(rel<=0.10)return 0.3;
+  return 0;
+}
+function _dedupParseDate(e){
+  const s=e&&e.svcDate;
+  if(s&&/^\d{4}-\d{2}-\d{2}/.test(s)){const d=new Date(s+'T00:00:00');return isNaN(d)?null:d}
+  return null;
+}
+function _dedupDateScore(da,db){
+  if(!da||!db)return null;
+  const days=Math.abs(da-db)/86400000;
+  if(days<=0.5)return 1;
+  if(days<=1)return 0.92;
+  if(days<=2)return 0.8;
+  if(days<=3)return 0.65;
+  if(days<=5)return 0.45;
+  if(days<=7)return 0.3;
+  if(days<=14)return 0.12;
+  return 0;
+}
+function _dedupNameScore(ta,tb){
+  if(!ta.length||!tb.length)return null;
+  const A=new Set(ta), B=new Set(tb);
+  let inter=0; A.forEach(t=>{if(B.has(t))inter++});
+  const uni=new Set([...ta,...tb]).size;
+  const jac=uni?inter/uni:0;
+  const cont=inter/Math.min(A.size,B.size);
+  return Math.max(jac, 0.85*cont);
+}
+function _dedupScore(cand, base){
+  const aS=_dedupAmountScore(cand.usdAmount, base.usdAmount);
+  const dS=_dedupDateScore(_dedupParseDate(cand), _dedupParseDate(base));
+  const ct=_dedupTokens(cand.desc);
+  let nS=_dedupNameScore(ct, _dedupTokens(base.desc));
+  const nS2=_dedupNameScore(ct, _dedupTokens((base.category||'')+' '+(base.desc||'')));
+  if(nS==null)nS=nS2; else if(nS2!=null)nS=Math.max(nS,nS2);
+  const sameCard=!!(cand.payMethod && base.payMethod && cand.payMethod===base.payMethod);
+  let num=0.5*aS, den=0.5;
+  if(dS!=null){num+=0.3*dS; den+=0.3}
+  if(nS!=null){num+=0.2*nS; den+=0.2}
+  let conf=den?num/den:0;
+  if(sameCard && aS>=1)conf=Math.min(1,conf+0.03);
+  if(nS==null)conf=Math.min(conf,0.88);
+  else if(nS<0.2)conf=Math.min(conf,0.45);
+  if(aS<=0.3)conf=Math.min(conf,0.25)*aS;
+  return {conf:Math.round(conf*100), aS, dS, nS, sameCard};
+}
+function _dedupScan(){
+  const xs=eData.expenses||[];
+  const cands=[]; let high=0, med=0, low=0;
+  for(let i=0;i<xs.length;i++){
+    const c=xs[i];
+    if(c.category!==DEDUP_REVIEW_CAT)continue;
+    let best=null;
+    for(let j=0;j<xs.length;j++){
+      if(j===i)continue;
+      const b=xs[j];
+      if(b.category===DEDUP_REVIEW_CAT && j>=i)continue;
+      const sc=_dedupScore(c,b);
+      if(!best || sc.conf>best.conf)best=Object.assign({},sc,{base:b});
+    }
+    const conf=best?best.conf:0;
+    let tier;
+    if(conf>=DEDUP_HIGH){tier='high';high++}
+    else if(conf>=DEDUP_MED){tier='med';med++}
+    else {tier='low';low++}
+    cands.push({cand:c, best, conf, tier});
+  }
+  cands.sort((a,b)=>b.conf-a.conf);
+  return {cands, counts:{high,med,low,total:cands.length}};
+}
+function _dedupPct(x){return x==null?'n/a':Math.round(x*100)+'%'}
+function _dedupWhy(b){
+  if(!b)return '';
+  return 'amt '+_dedupPct(b.aS)+' &middot; date '+_dedupPct(b.dS)+' &middot; name '+_dedupPct(b.nS)+(b.sameCard?' &middot; same card':'');
+}
+function _dedupRowHTML(it){
+  const c=it.cand, b=it.best;
+  const pillClass=it.tier==='high'?'dp-high':(it.tier==='med'?'dp-med':'dp-low');
+  const checked=it.tier==='high'?'checked':'';
+  const candCell='<div class="dedup-match"><b>'+esc(c.desc||'(no description)')+'</b><br><span class="mono">'+_dedupMoney(c.usdAmount)+'</span> &middot; '+esc(_fmtSvcCell(c))+(c.payName?' &middot; '+esc(c.payName):'')+'</div>';
+  let matchCell, why='';
+  if(b && b.base){
+    const m=b.base;
+    matchCell='<div class="dedup-match"><b>'+esc(m.desc||'(no description)')+'</b><br><span class="mono">'+_dedupMoney(m.usdAmount)+'</span> &middot; '+esc(_fmtSvcCell(m))+' &middot; <span class="dedup-faint">'+esc(m.category)+'</span></div>';
+    why='<div class="dedup-why">'+_dedupWhy(b)+'</div>';
+  } else {
+    matchCell='<div class="dedup-match dedup-faint">No match found &mdash; looks like a new transaction</div>';
+  }
+  return '<tr class="'+(it.tier==='high'?'dedup-dup-row':'')+'">'
+    +'<td class="dedup-pick-cell"><input type="checkbox" class="dedup-pick" data-id="'+esc(c.id)+'" '+checked+' onchange="dedupUpdateCount()"></td>'
+    +'<td><span class="dedup-pill '+pillClass+'">'+it.conf+'%</span></td>'
+    +'<td>'+candCell+'</td>'
+    +'<td class="dedup-arrow">&#8596;</td>'
+    +'<td>'+matchCell+why+'</td>'
+    +'</tr>';
+}
+function dedupRenderHTML(scan){
+  const c=scan.counts;
+  if(!scan.cands.length){
+    _dedupJustImported=0;
+    return '<div class="dedup-empty">No imported rows awaiting review. Import a card statement (CSV) above and any rows flagged <b>&ldquo;Imported (review)&rdquo;</b> will appear here for duplicate checking.</div>';
+  }
+  let banner='';
+  if(_dedupJustImported){
+    banner='<div class="dedup-banner">&#10003; Imported '+_dedupJustImported+' charge'+(_dedupJustImported===1?'':'s')+' &mdash; review possible duplicates below.</div>';
+  }
+  _dedupJustImported=0;
+  const rows=scan.cands.map(_dedupRowHTML).join('');
+  return banner
+    +'<div class="dedup-head"><b>'+c.total+'</b> imported row'+(c.total===1?'':'s')+' under review &middot; '
+      +'<span class="dp-high-txt">'+c.high+' likely duplicate'+(c.high===1?'':'s')+'</span> &middot; '
+      +'<span class="dp-med-txt">'+c.med+' possible</span> &middot; '
+      +'<span class="dp-low-txt">'+c.low+' look new</span></div>'
+    +'<div class="dedup-bar">'
+      +'<button class="btn" onclick="dedupSelect(\'high\')">Select likely</button>'
+      +'<button class="btn" onclick="dedupSelect(\'all\')">Select all</button>'
+      +'<button class="btn" onclick="dedupSelect(\'none\')">Clear</button>'
+      +'<span class="spacer"></span>'
+      +'<span class="dedup-sel-count" id="dedupSelCount">none selected</span>'
+      +'<button class="btn btn-del-multi" onclick="dedupDeleteSelected()">Delete selected</button>'
+      +'<button class="btn btn-clear" onclick="dedupClose()">Close</button>'
+    +'</div>'
+    +'<div class="tbl-wrap"><table class="dedup-table"><thead><tr>'
+      +'<th class="dedup-pick-cell"><input type="checkbox" id="dedupSelAll" onclick="dedupToggleAll(this)"></th>'
+      +'<th>Dup?</th><th>Imported row</th><th></th><th>Closest existing match</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<div class="dedup-note">Confidence blends amount (&asymp;50%), date (&asymp;30%) and merchant text (&asymp;20%), with guardrails so different amounts or clearly different merchants are not flagged. <b>Likely</b> rows (&ge;'+DEDUP_HIGH+'%) are pre-ticked. Review, then delete &mdash; this removes the imported copy and keeps the entry already in your tracker. Nothing is deleted automatically.</div>';
+}
+function openDedup(silent){
+  const panel=document.getElementById('dedupPanel');
+  if(!panel)return;
+  panel.innerHTML=dedupRenderHTML(_dedupScan());
+  panel.style.display='block';
+  dedupUpdateCount();
+  if(!silent){try{panel.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}}
+}
+function dedupClose(){const p=document.getElementById('dedupPanel');if(p){p.style.display='none';p.innerHTML=''}}
+function _dedupChecks(){return [...document.querySelectorAll('#dedupPanel .dedup-pick')]}
+function dedupSelectedIds(){return _dedupChecks().filter(c=>c.checked).map(c=>c.dataset.id)}
+function dedupUpdateCount(){
+  const n=dedupSelectedIds().length;
+  const el=document.getElementById('dedupSelCount');
+  if(el)el.textContent=n?(n+' selected'):'none selected';
+  const all=document.getElementById('dedupSelAll');
+  const boxes=_dedupChecks();
+  if(all)all.checked=boxes.length>0 && n===boxes.length;
+}
+function dedupToggleAll(cb){_dedupChecks().forEach(c=>{c.checked=cb.checked});dedupUpdateCount()}
+function dedupSelect(which){
+  _dedupChecks().forEach(c=>{
+    if(which==='all')c.checked=true;
+    else if(which==='none')c.checked=false;
+    else if(which==='high'){const tr=c.closest('tr');c.checked=!!(tr&&tr.classList.contains('dedup-dup-row'))}
+  });
+  dedupUpdateCount();
+}
+function dedupDeleteSelected(){
+  const ids=dedupSelectedIds();
+  if(!ids.length){alert('Tick one or more rows to delete.');return}
+  const total=ids.reduce((s,id)=>{const e=eData.expenses.find(x=>x.id===id);return s+(e?e.usdAmount:0)},0);
+  if(!confirm('Delete '+ids.length+' imported row'+(ids.length===1?'':'s')+' ($'+Math.round(total).toLocaleString()+' USD) flagged as duplicates? The matching entries already in your tracker are kept.'))return;
+  eData.expenses=eData.expenses.filter(e=>!ids.includes(e.id));
+  renderChart();renderSummary();renderExpenses();renderCards();renderPoints();saveE();
+  openDedup(true);
+}
+
 
 // ===================== COUNTDOWN =====================
 function tick(){const d=Math.max(0,Math.ceil((DEPART-new Date())/86400000));document.getElementById('cdNum').textContent=d}
