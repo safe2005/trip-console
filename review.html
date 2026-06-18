@@ -983,7 +983,7 @@ function _clearPending(){try{localStorage.removeItem('tcrev_pending')}catch(e){}
 function _reconcileLocal(){
   let changed=false;const pend=_getPending();
   [A_KEY,B_KEY,E_KEY,P_KEY].forEach(k=>{
-    const lv=localStorage.getItem('tc_'+k);if(!lv)return;
+    const lv=localStorage.getItem('tcrev_'+k);if(!lv)return;
     if(_gistCache[k]===undefined||pend.includes(k)){try{_gistCache[k]=JSON.parse(lv)}catch(e){_gistCache[k]=lv}changed=true;}
   });
   return changed;
@@ -1033,7 +1033,7 @@ async function sGet(key){
     return null;
   }
   // Tier 2: browser localStorage (offline fallback — used only when not connected to cloud)
-  try{const v=localStorage.getItem('tc_'+key);if(_sMode!=='cloud')_sMode='browser';return v?{value:v}:null}catch(e){}
+  try{const v=localStorage.getItem('tcrev_'+key);if(_sMode!=='cloud')_sMode='browser';return v?{value:v}:null}catch(e){}
   if(_sMode!=='cloud')_sMode='memory';return null;
 }
 
@@ -1042,14 +1042,14 @@ async function sSet(key,value){
   // Tier 1: GitHub cloud — once in cloud mode, STAY in cloud mode no matter what.
   if(_sMode==='cloud'){
     _gistCache[key]=parsed;
-    try{localStorage.setItem('tc_'+key,value)}catch(e){}            // offline mirror, not a mode change
+    try{localStorage.setItem('tcrev_'+key,value)}catch(e){}            // offline mirror, not a mode change
     if(LOWDATA){_pendingSync=true;ss('saved · sync in ≤45s');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000);return}
     if(await _gistSave()){_pendingSync=false;ss('synced to GitHub · '+_ts())}
     else{_pendingSync=true;ss('saved locally · cloud sync will retry');if(!_syncTimer)_syncTimer=setInterval(()=>flushSync(false),45000)}
     return;                                                          // never fall through to a browser-only demotion
   }
   // Tier 2: browser localStorage (offline fallback) — record as pending so it syncs up on reconnect
-  try{localStorage.setItem('tc_'+key,value);_markPending(key);if(_sMode!=='cloud')_sMode='browser';ss('saved offline · will sync when GitHub is reachable · '+_ts());return}catch(e){}
+  try{localStorage.setItem('tcrev_'+key,value);_markPending(key);if(_sMode!=='cloud')_sMode='browser';ss('saved offline · will sync when GitHub is reachable · '+_ts());return}catch(e){}
   if(_sMode!=='cloud')_sMode='memory';ss('in-memory only');
 }
 
