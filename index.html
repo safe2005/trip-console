@@ -1986,7 +1986,7 @@ function _parseCardCSV(text){
     format='Citi';
     const di=idx('debit'),dt=idx('date'),de=idx('description'),mn=idx('member name');
     data.forEach(r=>{const debit=_num(r[di]);if(debit>0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(debit*100)/100,catHint:'',member:String(r[mn]||'').trim()})}else skipped++});
-  } else if(idx('amount')!==-1&&(idx('extended details')!==-1||idx('appears on your statement as')!==-1)){          // AMEX (any column layout): positive Amount = charge
+  } else if(idx('amount')!==-1&&(idx('extended details')!==-1||idx('appears on your statement as')!==-1||idx('points/miles')!==-1)){          // AMEX (any column layout): positive Amount = charge
     format='Amex';
     const ai=idx('amount'),dt=idx('date'),de=idx('description'),ca=idx('category'),cm=idx('card member');
     data.forEach(r=>{const amt=_num(r[ai]);if(amt>0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(amt*100)/100,catHint:ca!==-1?String(r[ca]||'').trim():'',member:cm!==-1?String(r[cm]||'').trim():''})}else skipped++});
@@ -2010,7 +2010,7 @@ function _renderImportStaging(){
   const purOpts='<option value="">— none —</option>'+PURCHASERS.map(x=>`<option value="${x}">${x}</option>`).join('');
   const rowsHtml=p.charges.map((c,i)=>`<tr><td style="text-align:center"><input type="checkbox" class="imp-row" data-idx="${i}" checked></td><td class="mono" style="font-size:11px">${c.date}</td><td style="font-size:11px">${(c.desc.length>50?c.desc.slice(0,50)+'…':c.desc).replace(/</g,'&lt;')}</td><td class="mono">$${c.amount.toLocaleString('en',{minimumFractionDigits:2})}</td><td style="font-size:11px;color:var(--muted)">${esc(_impRowCardName(c,p.format))}</td></tr>`).join('');
   s.innerHTML=`
-    <div style="margin:12px 0;font-size:13px"><b>${p.format}</b> detected · <b>${p.charges.length}</b> charge(s) ready to import · <span style="color:var(--muted)">${p.skipped} payment/credit row(s) skipped</span></div><div style="margin:4px 0 0;font-size:11px;color:var(--muted)">Each charge is auto-assigned to the cardholder named on the statement (see &ldquo;&rarr; Card&rdquo;). Pick a specific card above to assign all rows to one card instead.</div>
+    <div style="margin:12px 0;font-size:13px"><b>${p.format}</b> detected · <b>${p.charges.length}</b> charge(s) ready to import · <span style="color:var(--muted)">${p.skipped} payment/credit row(s) skipped</span></div>${_impStagingNote(p)}
     <div class="report-row">
       <label>Card</label><select id="impPay">${payOpts}</select>
       <label>Category</label><select id="impCat">${catOpts}</select>
@@ -2121,6 +2121,14 @@ function renderBenRollup(){
     +'<div class="brs"><div class="brs-v">'+ptsEarned.toLocaleString()+'</div><div class="brs-l">bonus pts/mi secured</div></div>'
     +(ptsPending>0?('<div class="brs"><div class="brs-v brs-pending">'+ptsPending.toLocaleString()+'</div><div class="brs-l">still at stake</div></div>'):'')
     +'</div>'+next;
+}
+/* ---- import: cardholder-name caveat note ---- */
+function _impStagingNote(p){
+  const hasNames=((p&&p.charges)||[]).some(c=>String((c&&c.member)||'').trim());
+  if(hasNames){
+    return '<div style="margin:4px 0 0;font-size:11px;color:var(--muted)">Each charge is auto-assigned to the cardholder named on the statement (see &ldquo;&rarr; Card&rdquo;). Pick a specific card above to assign all rows to one card instead.</div>';
+  }
+  return '<div style="margin:6px 0 0;font-size:12px;color:var(--critical);background:var(--crit-bg);border-radius:6px;padding:7px 10px">This export does not list a cardholder name on each row, so <b>Auto cannot tell whose card these belong to</b> and falls back to the primary card. <b>Pick the cardholder&rsquo;s card above</b> to attribute them correctly.</div>';
 }
 /* ===================== DEDUP / RECONCILE ===================== */
 const DEDUP_REVIEW_CAT='Imported (review)';
