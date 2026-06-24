@@ -716,7 +716,7 @@ tr.dedup-dup-row td{background:var(--crit-bg)}
     <div class="report-row">
       <input type="file" id="impFile" accept=".csv,.CSV,text/csv" style="display:none" onchange="onImportFile(this)">
       <button class="btn btn-add" onclick="document.getElementById('impFile').click()">Choose CSV file…</button>
-      <span style="font-size:12px;color:var(--muted)">Amex or Citi statement export. Charges import; payments &amp; credits are skipped automatically.</span>
+      <span style="font-size:12px;color:var(--muted)">Amex, Citi, or Bank of America statement export. Charges import; payments &amp; credits are skipped automatically.</span>
     </div>
     <div id="impStaging" style="display:none"></div>
     <div class="report-row" style="margin-top:10px">
@@ -933,7 +933,7 @@ tr.dedup-dup-row td{background:var(--crit-bg)}
       <tr><td style="font-weight:700;color:var(--ok)">TOTAL 1A</td><td style="font-weight:700;color:var(--ok)">~$9,730+</td></tr>
     </table>
     <div style="color:var(--text);font-weight:600;margin:10px 0 6px">1B — on-trip upgrades (if cash savings not possible):</div>
-    <div>Diamond room upgrades (all 3 Hiltons) · AA miles Business upgrade (remaining ~110K after Le Méridien) · Premium seats via flight credit</div>
+    <div>Diamond room upgrades (all 3 Hiltons) · AA miles Business upgrade (remaining ~110K after Le Méridien) · Premium / Main Cabin Extra seats (cash — seat fees do not trigger the Aspire flight credit)</div>
     <div style="margin-top:10px;padding:8px 10px;background:rgba(216,164,74,.1);border-radius:8px;color:var(--accent2);font-weight:600;font-size:12px">RULE: Never bank. 1A (cash) before 1B (upgrades). Don't overspend to hit a threshold.</div>
     </div>
   </div>
@@ -1212,6 +1212,7 @@ const PAY_METHODS=[
   {id:'citi2',name:'Citi AA Exec — Shereen (AU)',cardId:'citi'},
   {id:'citi3',name:'Citi AA Exec — Salma (AU)',cardId:'citi'},
   {id:'citi4',name:'Citi AA Exec — Omar (AU)',cardId:'citi'},
+  {id:'bofa1',name:'BofA Premium Rewards — Hossam',cardId:null},
   {id:'cash',name:'Cash',cardId:null},
   {id:'__other_pay__',name:'+ Other (free text)',cardId:null},
 ];
@@ -1348,7 +1349,7 @@ const PHASES=[
   {type:'task',id:'T20',title:'Attend vaccine appointments + collect ICVP / yellow card',who:'All 8',due:'Per clinic',note:'Meningococcal (mandatory), Hep A, Typhoid, Polio, verify MMR.'},
 ]},
 {id:'w3',tag:'Wave 3',cls:'normal',title:'Pre-Departure — Week Before 6/21',sub:'Final confirmations, upgrades, activities',items:[
-  {type:'task',id:'T21',title:'Use remaining $50 Aspire flight credit — AA Wi-Fi or cheap refundable ticket',who:'Hossam',due:'During trip',val:'$50 remaining',note:'All regional flights on 1 Aspire; other cards Q1/Q2 expired. Best use: AA in-flight Wi-Fi on transatlantic leg (billed by AA) or book cheap refundable AA ticket, get credit, cancel for AA flight credit. Must charge directly to airline.'},
+  {type:'task',id:'T21',title:'Use remaining $50 Aspire flight credit — cheap refundable AIRFARE (not Wi-Fi)',who:'Hossam',due:'During trip',val:'$50 remaining',note:'All regional flights on 1 Aspire; other cards Q1/Q2 expired. Credit is for AIRFARE bought directly from an airline — NOT in-flight Wi-Fi (Wi-Fi bills via the connectivity vendor, e.g. Gogo, and will NOT trigger it). Best uses: book a cheap (>=$50) refundable/changeable AA ticket on aa.com, take the credit, then cancel/bank it; reload United TravelBank; or buy airline miles directly from the carrier. Put the actual in-flight Wi-Fi on BofA Premium Rewards instead.'},
   {type:'gate',id:'GD',tag:'Decision Gate D',q:'AA miles — Le Méridien DONE; upgrade AA 730/735 still open',opts:[
     {if:'Le Méridien (T9) — DONE',then:'3 rooms booked with AA miles via AAdvantage Hotels. 1A complete.'},
     {if:'1B — Check Business upgrade space on AA 730/735',then:'~25K miles + ~$350 copay/segment. Check availability ~1 week out (T22).'},
@@ -1971,7 +1972,7 @@ function cancelEdit(){
   document.getElementById('expEditBadge').classList.remove('show');
 }
 
-// ===================== CSV IMPORT (Amex / Citi) =====================
+// ===================== CSV IMPORT (Amex / Citi / BofA) =====================
 let _importParsed=null;
 function _parseCSV(text){
   text=text.replace(/^\uFEFF/,'');
@@ -1992,13 +1993,22 @@ function _parseCSV(text){
 }
 function _num(s){const v=parseFloat(String(s||'').replace(/[^0-9.\-]/g,''));return isNaN(v)?0:v}
 function _csvDateToISO(s){s=String(s||'').trim();const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m){return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0')}const d=new Date(s);return isNaN(d)?'':d.toISOString().slice(0,10)}
+function _findHeaderRow(rows){
+  for(let i=0;i<Math.min(rows.length,8);i++){
+    const h=rows[i].map(c=>String(c).trim().toLowerCase());
+    const has=n=>h.indexOf(n)!==-1;
+    if((has('debit')&&has('credit'))||(has('amount')&&(has('extended details')||has('appears on your statement as')||has('points/miles')))||(has('amount')&&(has('payee')||has('reference number'))))return i;
+  }
+  return 0;
+}
 function _parseCardCSV(text){
   const rows=_parseCSV(text);
   if(!rows.length)return{format:null,charges:[],skipped:0,total:0};
-  const hdr=rows[0].map(h=>h.trim().toLowerCase());
+  const hi=_findHeaderRow(rows);
+  const hdr=rows[hi].map(h=>h.trim().toLowerCase());
   const idx=n=>hdr.indexOf(n);
   let format=null,charges=[],skipped=0;
-  const data=rows.slice(1).filter(r=>r.some(c=>String(c).trim()!==''));
+  const data=rows.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!==''));
   if(idx('debit')!==-1&&idx('credit')!==-1){                       // CITI: Debit = charge, Credit = refund/payment
     format='Citi';
     const di=idx('debit'),dt=idx('date'),de=idx('description'),mn=idx('member name');
@@ -2007,6 +2017,10 @@ function _parseCardCSV(text){
     format='Amex';
     const ai=idx('amount'),dt=idx('date'),de=idx('description'),ca=idx('category'),cm=idx('card member');
     data.forEach(r=>{const amt=_num(r[ai]);if(amt>0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(amt*100)/100,catHint:ca!==-1?String(r[ca]||'').trim():'',member:cm!==-1?String(r[cm]||'').trim():''})}else skipped++});
+  } else if(idx('amount')!==-1&&(idx('payee')!==-1||idx('reference number')!==-1)){          // BANK OF AMERICA: single signed Amount, purchases NEGATIVE; no cardholder column
+    format='BofA';
+    const ai=idx('amount'),dt=(idx('posted date')!==-1?idx('posted date'):idx('date')),de=(idx('payee')!==-1?idx('payee'):idx('description'));
+    data.forEach(r=>{const amt=_num(r[ai]);if(amt<0){charges.push({date:r[dt]||'',desc:String(r[de]||'').replace(/\s+/g,' ').trim(),amount:Math.round(Math.abs(amt)*100)/100,catHint:'',member:''})}else skipped++});
   }
   return{format,charges,skipped,total:data.length};
 }
@@ -2020,7 +2034,7 @@ function onImportFile(input){
 }
 function _renderImportStaging(){
   const s=document.getElementById('impStaging');const p=_importParsed;
-  if(!p||!p.format){if(s){s.style.display='none';s.innerHTML=''}alert('Could not recognize this CSV. Expected an American Express or Citi statement export.');return}
+  if(!p||!p.format){if(s){s.style.display='none';s.innerHTML=''}alert('Could not recognize this CSV. Expected an American Express, Citi, or Bank of America statement export.');return}
   if(!p.charges.length){s.style.display='none';s.innerHTML='';alert(p.format+' file recognized, but it contained no charges to import ('+p.skipped+' payment/credit rows).');return}
   const payOpts='<option value="__auto__">Auto \u2014 match cardholder on statement</option>'+allPays().map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   const catOpts='<option value="__imported__">Imported (review)</option>'+allCats().map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -2067,7 +2081,7 @@ function cancelImport(){_importParsed=null;const s=document.getElementById('impS
 
 /* ===================== IMPORT CARD ROUTING + BENEFITS EXTRAS ===================== */
 function _impCardPool(format){
-  const pre=format==='Amex'?'aspire':(format==='Citi'?'citi':null);
+  const pre=format==='Amex'?'aspire':(format==='Citi'?'citi':(format==='BofA'?'bofa':null));
   if(!pre)return [];
   return PAY_METHODS.filter(m=>m.id.indexOf(pre)===0 && m.id!=='__other_pay__');
 }
@@ -2078,7 +2092,7 @@ function _cardPerson(name){
 }
 function _resolveCardId(charge, format){
   const pool=_impCardPool(format);
-  if(!pool.length)return format==='Amex'?'aspire1':(format==='Citi'?'citi1':'cash');
+  if(!pool.length)return format==='Amex'?'aspire1':(format==='Citi'?'citi1':(format==='BofA'?'bofa1':'cash'));
   const mem=String(charge&&charge.member||'').toLowerCase();
   if(mem){for(const m of pool){const p=_cardPerson(m.name);if(p&&mem.indexOf(p)!==-1)return m.id}}
   return pool[0].id;
