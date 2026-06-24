@@ -968,12 +968,16 @@ tr.dedup-dup-row td{background:var(--crit-bg)}
     <div class="ld-label"><b>Low Data Mode</b><div id="ldStatus">Off — full experience</div></div>
     <button class="btn-syncnow" onclick="manualSync()">Sync Now</button>
   </div>
+  <div class="ld-toggle-row" style="margin-top:6px">
+    <label class="ld-switch"><input type="checkbox" id="ldAutoToggle" onchange="toggleAutoLowData()"><span class="ld-slider"></span></label>
+    <div class="ld-label"><b>Auto-detect slow connection</b><div id="ldAutoStatus">On — engages automatically on 2G / slow links</div></div>
+  </div>
   <div class="ref-body" style="padding:0 0 8px"><table>
     <tr><td>Fonts</td><td>System fonts instead of ~200 KB of web fonts (saves ~33s on 2G first load)</td></tr>
     <tr><td>Sync</td><td>Batched — saves to your phone instantly, syncs to GitHub every ~45 seconds (and when you leave the page)</td></tr>
     <tr><td>Effects</td><td>Background texture, blur, and animations off</td></tr>
     <tr><td>Tabs</td><td>Loaded only when opened (lazy render)</td></tr>
-    <tr><td>Auto</td><td>On Android, turns on automatically for 2G or Data Saver. iPhone has no connection API — use the manual toggle.</td></tr>
+    <tr><td>Auto</td><td>Turns on by itself on slow links — 2G / Data Saver on Android, and latency + load-speed detection on iPhone. Use the "Auto-detect slow connection" switch above to disable.</td></tr>
   </table></div>
   <div class="section-title">How It Works</div>
   <div class="ref-body" style="padding:0">
@@ -1007,10 +1011,23 @@ tr.dedup-dup-row td{background:var(--crit-bg)}
 // ===================== LOW DATA MODE =====================
 const FONT_URL='https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap';
 let LOWDATA=false;
+let _ldAuto=false,_ldManual=false,_connTimer=null,_slowStreak=0,_fastStreak=0;
 function loadFonts(){if(document.getElementById('gfonts'))return;const l=document.createElement('link');l.id='gfonts';l.rel='stylesheet';l.href=FONT_URL;document.head.appendChild(l)}
 function unloadFonts(){const l=document.getElementById('gfonts');if(l)l.remove()}
 function getLowDataPref(){const v=localStorage.getItem('tc_lowdata');return v===null?null:v==='1'}
-function autoDetectLowData(){try{const c=navigator.connection;if(c&&(c.saveData===true||c.effectiveType==='2g'||c.effectiveType==='slow-2g'))return true}catch(e){}return false}
+function getAutoPref(){const v=localStorage.getItem('tc_lowdata_auto');return v===null?true:v==='1'}
+function setAutoPref(on){localStorage.setItem('tc_lowdata_auto',on?'1':'0')}
+function netinfoVerdict(){try{const c=navigator.connection;if(!c)return null;if(c.saveData===true)return 'slow';if(c.effectiveType==='2g'||c.effectiveType==='slow-2g')return 'slow';if(c.effectiveType==='3g'||c.effectiveType==='4g')return 'fast';}catch(e){}return null}
+function passiveVerdict(){try{const e=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||null;if(!e)return null;const b=e.transferSize||e.encodedBodySize||0;const ms=(e.responseEnd||0)-(e.responseStart||0);if(b>=10000&&ms>=30){const kbps=(b*8)/ms;if(kbps<200)return 'slow';}}catch(e){}return null}
+function autoDetectLowData(){return netinfoVerdict()==='slow'||passiveVerdict()==='slow'}
+function probeVerdict(){return new Promise(res=>{try{if(!navigator.onLine)return res(null);const t0=performance.now();const ctl=('AbortController'in window)?new AbortController():null;const to=ctl?setTimeout(()=>{try{ctl.abort()}catch(e){}},6000):null;fetch(location.pathname+'?_p='+Date.now(),{method:'HEAD',cache:'no-store',signal:ctl?ctl.signal:undefined}).then(()=>{if(to)clearTimeout(to);const rtt=performance.now()-t0;res(rtt>1500?'slow':rtt<700?'fast':null)}).catch(()=>{if(to)clearTimeout(to);res(null)})}catch(e){res(null)}})}
+function _ldToast(msg){try{const t=document.createElement('div');t.className='qa-toast';t.textContent=msg;document.body.appendChild(t);requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400)},3200)}catch(e){}}
+function applyAuto(on){if(on&&!LOWDATA){applyLowData(true);_ldAuto=true;_ldToast('\u26A1 Low Data Mode on \u2014 slow connection')}else if(!on&&LOWDATA&&_ldAuto){applyLowData(false);_ldAuto=false;_ldToast('\u26A1 Low Data Mode off \u2014 connection recovered')}}
+function evaluateConn(verdict,strong){if(!getAutoPref()||_ldManual)return;if(verdict==='slow'){_slowStreak++;_fastStreak=0;applyAuto(true)}else if(verdict==='fast'){_fastStreak++;_slowStreak=0;if(strong||_fastStreak>=2)applyAuto(false)}}
+function _probeAndEval(){if(document.hidden)return;probeVerdict().then(v=>{if(v)evaluateConn(v,false)})}
+function refreshAutoUi(){const t=document.getElementById('ldAutoToggle');if(t)t.checked=getAutoPref();const s=document.getElementById('ldAutoStatus');if(s)s.textContent=getAutoPref()?'On \u2014 engages automatically on 2G / slow links':'Off \u2014 manual control only'}
+function toggleAutoLowData(){const on=document.getElementById('ldAutoToggle').checked;setAutoPref(on);refreshAutoUi();if(on){_ldManual=false;_slowStreak=0;_fastStreak=0;if(autoDetectLowData())evaluateConn('slow',true);else setTimeout(_probeAndEval,300)}else{_ldAuto=false}}
+function initAutoLowData(){try{const c=navigator.connection;if(c&&c.addEventListener)c.addEventListener('change',()=>{const v=netinfoVerdict();if(v)evaluateConn(v,true)})}catch(e){}window.addEventListener('online',()=>{_slowStreak=0;_fastStreak=0;setTimeout(_probeAndEval,800)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(_probeAndEval,300)});if(!_connTimer)_connTimer=setInterval(_probeAndEval,90000);if(netinfoVerdict()===null)setTimeout(_probeAndEval,2500)}
 function applyLowData(on){
   LOWDATA=on;
   document.body.classList.toggle('lowdata',on);
@@ -1019,7 +1036,7 @@ function applyLowData(on){
   const st=document.getElementById('ldStatus');if(st)st.textContent=on?'On — optimized for slow/cellular':'Off — full experience';
   if(on){unloadFonts()}else{loadFonts()}
 }
-function toggleLowData(){const on=document.getElementById('ldToggle').checked;localStorage.setItem('tc_lowdata',on?'1':'0');applyLowData(on);if(on&&_pendingSync){/* keep timer */}}
+function toggleLowData(){const on=document.getElementById('ldToggle').checked;localStorage.setItem('tc_lowdata',on?'1':'0');_ldManual=true;_ldAuto=false;applyLowData(on);if(on&&_pendingSync){/* keep timer */}}
 // ---- Light / Dark theme ----
 function getThemePref(){return localStorage.getItem('tc_theme')||'dark'}
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('themeBtn');if(b)b.textContent=t==='dark'?'☀️':'🌙'}
@@ -2819,9 +2836,13 @@ function _handleUrlTask(){
 
 (async function(){
   // Low Data Mode decision (before fonts load)
-  let _ldPref=getLowDataPref();
-  if(_ldPref===null)_ldPref=autoDetectLowData();
-  applyLowData(_ldPref);
+  const _ldPref=getLowDataPref();
+  let _ldStart=(_ldPref===true);
+  if(_ldPref===true){_ldManual=true;}
+  else if(getAutoPref()&&autoDetectLowData()){_ldStart=true;_ldAuto=true;}
+  applyLowData(_ldStart);
+  refreshAutoUi();
+  initAutoLowData();
   // Read-only shared calendar link? render it and stop (no app data needed)
   if(detectSharedCalendar()){applyTheme(getThemePref());renderSharedCalendar();return}
   // Try GitHub first
