@@ -1370,6 +1370,16 @@ const PHASES=[
   {type:'task',id:'T31',title:'MID-STAY FOLIO SPLIT at DoubleTree — evening 6/30',who:'Adults 1–4',due:'6/30',crit:true,val:'$800',note:'Settle folio 6/30 to capture $200 H1 + $200 H2 Resort Credit per card. Skipping forfeits $800.'},
   {type:'task',id:'T32',title:'Repack Zamzam at Le Méridien into 23kg checked bags',who:'All',due:'7/11',note:'BA free-Zamzam is JED-origin only; from CAI must fit 23kg.'},
 ]},
+{id:'jed',tag:'Jul 2',cls:'during',title:'Jul 2 — Jeddah Arrival → Makkah',sub:'Timed arrival checklist (Makkah time) · added from the arrival plan',items:[
+  {type:'task',id:'jed1',title:'⚠️ Enter IHRAM before boarding at SSH',who:'All 8',due:'Jul 2 · pre-flight',crit:true,note:'Miqat = Al-Juhfah/Rabigh, crossed in-flight — no airline announcement. Stay in ihram until Umrah is complete.'},
+  {type:'task',id:'jed2',title:'✈ Land Jeddah ~7:30 PM — Terminal 1',who:'All 8',due:'Jul 2 · 7:30 PM',note:'Hajj Terminal is closed in July → you process as a regular international arrival (faster).'},
+  {type:'task',id:'jed3',title:'🛂 Clear immigration + biometrics + baggage',who:'All 8',due:'Jul 2 · ~7:45 PM',crit:true,note:'Group of 8 + July peak → allow 45–90 min. Have passports + Nusuk/Umrah permit in hand for everyone.'},
+  {type:'task',id:'jed4',title:'🕌 Maghrib ~7:07 PM / Isha ~8:37 PM (Makkah)',who:'All 8',due:'Jul 2 · evening',note:'As musafir you may combine Maghrib + Isha and shorten. The airport has prayer rooms.'},
+  {type:'task',id:'jed5',title:'🚐 Meet the pre-booked Hiace driver in arrivals',who:'All 8',due:'Jul 2 · ~9:00 PM',crit:true,note:'Look for your name sign. Confirm ahead that the driver is flight-tracking your arrival and has the correct terminal.'},
+  {type:'task',id:'jed6',title:'🚐 Ride JED → Conrad Makkah',who:'All 8',due:'Jul 2 · ~9:20 PM',note:'~75–95 km, 60–90 min + Makkah entry checkpoint (Nusuk ready).'},
+  {type:'task',id:'jed7',title:'🏨 Check in at Conrad Makkah (3 rooms, 4 nights)',who:'All 8',due:'Jul 2 · ~10:45 PM',note:'Realistic in-room ~11:00–11:15 PM.'},
+  {type:'task',id:'jed8',title:'🕋 Begin Umrah while in ihram — or rest and perform after Fajr',who:'All 8',due:'Jul 2 / Jul 3',note:'Ihram restrictions stay in effect until the Umrah rites are complete. Late night is cooler and less crowded; after Fajr also works if you rest first.'},
+]},
 ];
 
 function allTasks(){return PHASES.flatMap(p=>p.items.filter(i=>i.type==='task'&&!i.na))}
